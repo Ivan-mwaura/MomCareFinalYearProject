@@ -1,0 +1,105 @@
+@use "../../Components/styles/variables" as vars;
+@use "../../Components/styles/mixins" as *;
+
+.profile-settings {
+  padding: vars.$padding;
+  color: vars.$text-primary;
+  margin-top: 30px;
+
+  h1 {
+    text-align: center;
+    color: vars.$primary;
+    margin-bottom: 50px;
+  }
+
+  .profile-container {
+    display: flex;
+    justify-content: space-around;
+    gap: vars.$padding;
+    flex-wrap: wrap;
+
+
+    .profile-card,
+    .settings-card {
+      //background-color: vars.$secondary;
+      border-radius: vars.$border-radius;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: vars.$padding;
+      width: 100%;
+      max-width: 400px;
+      margin-left: 20px;
+
+
+      @include tablet {
+        max-width: 90%;
+      }
+
+      h2 {
+        margin-bottom: vars.$padding;
+        color: vars.$primary;
+      }
+    }
+
+    .profile-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      .profile-picture {
+        width: 150px;
+        height: 150px;
+        margin-bottom: vars.$padding;
+        border-radius: 50%;
+        overflow: hidden;
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+      }
+
+      .profile-info {
+        width: 100%;
+        text-align: left;
+
+        label {
+          display: block;
+          margin-bottom: vars.$padding;
+
+          input {
+            width: 100%;
+            padding: 10px;
+            background-color: vars.$secondary;
+            color: vars.$text-primary;
+            border-radius: vars.$border-radius;
+            border: 1px solid vars.$accent;
+          }
+        }
+
+        p {
+          margin-bottom: vars.$padding;
+          strong {
+            color: vars.$primary;
+          }
+        }
+
+        .edit-btn,
+        .save-btn {
+          margin-top: vars.$padding;
+          padding: 10px 20px;
+          border-radius: vars.$border-radius;
+          background-color: vars.$primary;
+          color: vars.$background;
+          border: none;
+          cursor: pointer;
+
+          &:hover {
+            background-color: vars.$accent;
+          }
+        }
+      }
+    }
+
+   
+  }
+}
