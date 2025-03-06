@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "MomCare",
+    "slug": "MomCare",
+    "scheme": "MomCare",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "notification": {
+      "icon": "./assets/mom-care-logo.png",
+      "color": "#FF6B8A",
+      "iosDisplayInForeground": true
+    },
+    "extra": {
+      "EXPO_ROUTER_APP_ROOT": "./app"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

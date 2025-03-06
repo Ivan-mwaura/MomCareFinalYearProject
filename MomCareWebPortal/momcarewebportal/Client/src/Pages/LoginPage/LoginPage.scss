@@ -1,0 +1,106 @@
+@use "../../Components/styles/variables" as vars;
+@use "../../Components/styles/mixins" as *;
+@use "sass:math";
+
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(135deg, vars.$background-light, vars.$background);
+
+  .login-container {
+    background: vars.$background;
+    padding: vars.$padding;
+    border-radius: vars.$border-radius;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    animation: fadeIn 0.8s ease-in-out;
+
+    h1 {
+      color: vars.$primary;
+      margin-bottom: math.div(vars.$padding, 1.5);
+    }
+
+    p {
+      color: vars.$text-secondary;
+      margin-bottom: math.div(vars.$padding, 2);
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: vars.$padding;
+
+      .role-selector {
+        display: flex;
+        justify-content: space-around;
+        margin-bottom: vars.$padding;
+        label {
+          font-size: 14px;
+          color: vars.$text-primary;
+          input {
+            margin-right: 5px;
+          }
+        }
+      }
+
+      .input-group {
+        text-align: left;
+        label {
+          display: block;
+          margin-bottom: 5px;
+          font-size: 14px;
+          color: vars.$primary;
+        }
+        input {
+          width: 100%;
+          padding: 10px;
+          border: 1px solid vars.$accent;
+          border-radius: vars.$border-radius;
+          background-color: vars.$secondary;
+          color: vars.$text-primary;
+          transition: border 0.3s ease;
+          &:focus {
+            outline: none;
+            border-color: vars.$primary;
+          }
+        }
+      }
+
+      .login-btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: vars.$border-radius;
+        background-color: vars.$primary;
+        color: vars.$background;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        &:hover {
+          background-color: vars.$accent;
+        }
+      }
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@include mobile {
+  .login-container {
+    padding: math.div(vars.$padding, 2);
+    width: 90%;
+  }
+}

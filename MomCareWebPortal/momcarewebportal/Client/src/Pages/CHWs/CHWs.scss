@@ -1,0 +1,183 @@
+@use "../../Components/styles/variables" as vars;
+@use "../../Components/styles/mixins" as *;
+
+.chw-management {
+  padding: vars.$padding;
+  color: vars.$text-primary;
+
+  h1 {
+    color: vars.$primary;
+    text-align: center;
+    margin-bottom: vars.$padding;
+  }
+
+  .search-bar {
+    margin-bottom: vars.$padding;
+
+    input {
+      width: 100%;
+      padding: 10px;
+      border-radius: vars.$border-radius;
+      border: 1px solid vars.$accent;
+      background-color: vars.$secondary;
+      color: #000;
+    }
+  }
+
+  .add-chw-btn {
+    background-color: vars.$primary;
+    color: vars.$background;
+    border: none;
+    border-radius: vars.$border-radius;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-bottom: vars.$padding;
+
+    &:hover {
+      background-color: vars.$accent;
+    }
+  }
+
+  .chw-list {
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: vars.$padding;
+
+      th,
+      td {
+        text-align: left;
+        padding: vars.$padding;
+        border: 1px solid vars.$accent;
+      }
+
+      th {
+        background-color: vars.$secondary;
+        color: vars.$text-primary;
+      }
+
+      td button {
+        margin-right: 5px;
+        background-color: vars.$primary;
+        color: vars.$background;
+        padding: 5px 10px;
+        border-radius: vars.$border-radius;
+        border: none;
+
+        &:hover {
+          background-color: vars.$accent;
+        }
+      }
+    }
+
+    .pagination {
+      text-align: center;
+
+      button {
+        padding: 10px;
+        margin: 0 5px;
+        border-radius: vars.$border-radius;
+        border: none;
+        background-color: vars.$primary;
+        color: vars.$background;
+
+        &:disabled {
+          background-color: vars.$secondary;
+        }
+      }
+    }
+  }
+
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .modal-content {
+      background: vars.$background;
+      padding: vars.$padding;
+      border-radius: vars.$border-radius;
+      width: 55%;
+      max-height: 90vh;
+      overflow-y: auto;
+      
+      .title{
+        color: vars.$primary;
+        text-align: center;
+        margin-bottom: vars.$padding;
+        font-weight: 600;
+      }
+
+      .form-title{
+        color: vars.$primary;
+        text-align: center;
+        margin-bottom: vars.$padding;
+        font-weight: 600;
+      }
+
+      form label {
+        display: block;
+        margin-bottom: vars.$padding;
+        padding-right: 20px;
+
+        input,
+        select {
+          width: 100%;
+          padding: 10px;
+          border-radius: vars.$border-radius;
+          border: 1px solid vars.$accent;
+          background-color: vars.$secondary;
+          color: vars.$text-primary;
+        }
+      }
+
+      button {
+        margin-top: vars.$padding;
+        margin-right: 20px;
+        padding: 10px 15px;
+        border-radius: vars.$border-radius;
+        border: none;
+        background-color: vars.$primary;
+        color: vars.$background;
+
+        &:hover {
+          background-color: vars.$accent;
+        }
+      }
+    }
+  }
+
+  .form-grid {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    overflow: auto;
+    max-height: 70vh; // Make the form scrollable
+
+    .form-left,
+    .form-right {
+      width: 48%; /* Adjust for two columns */
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+  }
+}

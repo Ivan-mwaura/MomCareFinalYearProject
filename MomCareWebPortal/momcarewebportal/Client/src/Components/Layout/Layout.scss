@@ -1,0 +1,62 @@
+@use "../styles/variables" as *;
+@use "../styles/mixins" as *;
+
+.layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-color: $background-dark;
+
+  .main-content {
+    flex-grow: 1;
+    overflow: scroll;
+    padding: $padding;
+    color: $text-primary;
+
+    /* Hide scrollbars but keep the scrolling functionality */
+    &::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+    }
+
+    /* Firefox */
+    scrollbar-width: none;
+
+    .content-header {
+      font-size: 24px;
+      font-weight: bold;
+      color: $primary;
+      margin-bottom: $padding;
+    }
+
+    .content-body {
+      font-size: 16px;
+      line-height: 1.6;
+      color: $text-secondary;
+    }
+
+    @include laptop {
+      padding: 20px;
+    }
+
+    @include mobile {
+      padding: 15px;
+
+      .content-header {
+        font-size: 20px;
+      }
+
+      .content-body {
+        font-size: 14px;
+      }
+    }
+  }
+
+  @include tablet {
+    //flex-direction: column;
+
+    .main-content {
+      padding: 10px;
+    }
+  }
+}
