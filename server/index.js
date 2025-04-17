@@ -40,6 +40,8 @@ app.use(cors({
 app.use(express.urlencoded({ extended: true }));
 //app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
 
+
+
 // Mount Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -60,6 +62,9 @@ app.use('/api/dashboard', dashboardRoutes);
 
 // Error Handler Middleware
 app.use(errorMiddleware);
+
+app.get('/', (req, res) => res.json({ message: 'Welcome to Mom Care API' }));
+app.get('/api/health', (req, res) => res.json({ status: 'OK' }));
 
 const PORT = process.env.PORT || 5000;
 
