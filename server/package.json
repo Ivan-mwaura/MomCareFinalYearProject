@@ -4,8 +4,8 @@
     "description": "Backend for MomCare application",
     "main": "index.js",
     "scripts": {
-        "start": "nodemon index.js",
-        "dev": "nodemon index.js",
+        "start": "node index.js",
+        "dev": "node index.js",
         "test": "jest"
     },
     "dependencies": {
