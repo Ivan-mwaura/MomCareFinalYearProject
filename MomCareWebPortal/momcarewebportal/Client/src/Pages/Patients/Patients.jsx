@@ -99,7 +99,7 @@ const Patients = () => {
     const token = Cookies.get("token");
 
     axios
-      .post("http://localhost:5000/api/mothers/register", newMother, {
+      .post(`${import.meta.env.VITE_BACKEND_URL}/mothers/register`, newMother, {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then((response) => {

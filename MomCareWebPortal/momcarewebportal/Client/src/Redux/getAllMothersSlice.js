@@ -7,7 +7,7 @@ export const fetchMothers = createAsyncThunk(
   'mothers/fetchMothers',
   async () => {
     const token = Cookies.get("token");
-    const response = await axios.get('http://localhost:5000/api/mothers', {
+    const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/mothers`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     // Assuming the backend returns { data: [ ... ] }

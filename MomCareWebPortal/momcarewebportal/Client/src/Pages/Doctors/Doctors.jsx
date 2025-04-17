@@ -30,7 +30,7 @@ const Doctors = () => {
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/doctors", {
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/doctors`, {
             headers: {
                 Authorization: `Bearer ${Cookies.get("token")}`
             }
@@ -74,12 +74,12 @@ const Doctors = () => {
       e.preventDefault();
       try {
         const response = editingDoctor
-          ? await axios.put(`http://localhost:5000/api/doctors/${editingDoctor.id}`, newDoctor, {
+          ? await axios.put(`${import.meta.env.VITE_BACKEND_URL}/doctors/${editingDoctor.id}`, newDoctor, {
                 headers: {
                     Authorization: `Bearer ${Cookies.get("token")}`
                 }
           })
-          : await axios.post("http://localhost:5000/api/doctors", newDoctor, {
+          : await axios.post(`${import.meta.env.VITE_BACKEND_URL}/doctors`, newDoctor, {
                 headers: {
                     Authorization: `Bearer ${Cookies.get("token")}`
                 }

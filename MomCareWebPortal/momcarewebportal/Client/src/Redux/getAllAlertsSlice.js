@@ -6,7 +6,7 @@ export const fetchAlerts = createAsyncThunk(
   'alerts/fetchAlerts',
   async () => {
     const token = Cookies.get("token");
-    const response = await axios.get('http://localhost:5000/api/alerts', {
+    const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/alerts`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     // Make sure we handle both possible response structures

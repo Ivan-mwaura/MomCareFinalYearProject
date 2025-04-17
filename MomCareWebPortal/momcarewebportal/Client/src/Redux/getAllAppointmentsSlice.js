@@ -7,7 +7,7 @@ export const fetchAppointments = createAsyncThunk(
   'appointments/fetchAppointments',
   async () => {
     const token = Cookies.get("token");
-    const response = await axios.get('http://localhost:5000/api/appointments', {
+    const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/appointments`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     // Assuming the API returns { data: [ ... ] }

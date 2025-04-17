@@ -48,7 +48,7 @@ const AppointmentRecord = () => {
         setLoading(true);
         axios
           .get(
-            `http://localhost:5000/api/mothers/search?search=${encodeURIComponent(searchQuery)}`,
+            `${import.meta.env.VITE_BACKEND_URL}/mothers/search?search=${encodeURIComponent(searchQuery)}`,
             {
               headers: { Authorization: `Bearer ${Cookies.get("token")}` }
             }
@@ -72,7 +72,7 @@ const AppointmentRecord = () => {
     if (selectedMother) {
       axios
         .get(
-          `http://localhost:5000/api/appointmentRecords/mother/${selectedMother.id}`,
+          `${import.meta.env.VITE_BACKEND_URL}/appointmentRecords/mother/${selectedMother.id}`,
           {
             headers: { Authorization: `Bearer ${Cookies.get("token")}` }
           }
@@ -147,7 +147,7 @@ const AppointmentRecord = () => {
     }
     const recordData = { ...formData, motherId: selectedMother.id };
     axios
-      .post("http://localhost:5000/api/appointmentRecords", recordData, {
+      .post(`${import.meta.env.VITE_BACKEND_URL}/appointmentRecords`, recordData, {
         headers: { Authorization: `Bearer ${Cookies.get("token")}` }
       })
       .then((response) => {
@@ -246,7 +246,7 @@ const AppointmentRecord = () => {
               <div className="tip-card">
                 <span className="tip-icon">📅</span>
                 <h3>Schedule Visits</h3>
-                <p>Enter a mother’s name or email to start recording her appointment details.</p>
+                <p>Enter a mother's name or email to start recording her appointment details.</p>
               </div>
               <div className="tip-card">
                 <span className="tip-icon">🩺</span>
@@ -568,7 +568,7 @@ const AppointmentRecord = () => {
                     <h3>Additional Notes</h3>
                     <div className="form-grid">
                       <label>
-                        Doctor’s Observations
+                        Doctor's Observations
                         <textarea
                           name="doctorsObservations"
                           value={formData.doctorsObservations}
@@ -644,7 +644,7 @@ const AppointmentRecord = () => {
                               <div><strong>Next Appointment Date:</strong> {record.nextAppointmentDate ? new Date(record.nextAppointmentDate).toDateString() : "N/A"}</div>
                               <div><strong>Care Recommendations:</strong> {record.careRecommendations || "N/A"}</div>
                               <div><strong>Adherence Notes:</strong> {record.adherenceNotes || "N/A"}</div>
-                              <div><strong>Doctor’s Observations:</strong> {record.doctorsObservations || "N/A"}</div>
+                              <div><strong>Doctor's Observations:</strong> {record.doctorsObservations || "N/A"}</div>
                               <div><strong>Patient Concerns:</strong> {record.patientConcerns || "N/A"}</div>
                             </div>
                           </div>

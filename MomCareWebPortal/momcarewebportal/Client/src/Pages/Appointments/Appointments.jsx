@@ -1,7 +1,7 @@
 // src/Pages/Appointments/Appointments.jsx
-import React, { useState, useEffect } from "react";
+import  { useState, useEffect } from "react";
 import "./Appointments.scss";
-import { CircularProgress, Skeleton } from "@mui/material";
+import {  Skeleton } from "@mui/material";
 import { useToast } from "../../Components/ui/use-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAppointments } from "../../Redux/getAllAppointmentsSlice";
@@ -77,7 +77,7 @@ const Appointments = () => {
   const handleApproveAppointment = async (appointmentId) => {
     try {
       await axios.put(
-        `http://localhost:5000/api/appointments/${appointmentId}`,
+        `${import.meta.env.VITE_BACKEND_URL}/appointments/${appointmentId}`,
         { status: "Approved" },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -100,7 +100,7 @@ const Appointments = () => {
   const handleConfirmReschedule = async (newDate, newTime) => {
     try {
       await axios.put(
-        `http://localhost:5000/api/appointments/${reschedulingAppointment.id}`,
+        `${import.meta.env.VITE_BACKEND_URL}/appointments/${reschedulingAppointment.id}`,
         { date: newDate, time: newTime },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -129,7 +129,7 @@ const Appointments = () => {
   const handleConfirmCancel = async () => {
     try {
       await axios.delete(
-        `http://localhost:5000/api/appointments/${cancelingAppointment.id}`,
+        `${import.meta.env.VITE_BACKEND_URL}/appointments/${cancelingAppointment.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast({ title: "Success", description: "Appointment canceled." });

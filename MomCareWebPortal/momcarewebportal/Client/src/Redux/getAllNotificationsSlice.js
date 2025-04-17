@@ -6,7 +6,7 @@ export const fetchNotifications = createAsyncThunk(
   'notifications/fetchNotifications',
   async () => {
     const token = Cookies.get("token");
-    const response = await axios.get('http://localhost:5000/api/notifications', {
+    const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/notifications`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     // Notifications are returned as a direct array, not nested under data property

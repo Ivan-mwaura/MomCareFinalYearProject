@@ -7,7 +7,7 @@ export const fetchCHWs = createAsyncThunk(
   'chws/fetchCHWs',
   async () => {
     const token = Cookies.get("token");
-    const response = await axios.get('http://localhost:5000/api/chws', {
+    const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/chws`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     return response.data.data;

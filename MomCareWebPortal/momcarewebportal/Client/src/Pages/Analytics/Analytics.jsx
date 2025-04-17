@@ -47,7 +47,7 @@ const Analytics = () => {
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
 
-      const response = await axios.get(`http://localhost:5000/api/analytics?${params.toString()}`, {
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/analytics?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAnalyticsData(response.data);
