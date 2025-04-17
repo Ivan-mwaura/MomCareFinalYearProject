@@ -3,11 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
+  TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, SIZES } from "../styles/theme";
+import { LinearGradient } from "expo-linear-gradient";
 
 const HealthEducationPages = () => {
   const [activeSection, setActiveSection] = useState("Health Tips");
@@ -19,130 +19,85 @@ const HealthEducationPages = () => {
 
   const healthTips = {
     Nutrition: [
-      { id: 1, title: "Balanced Diet", details: "Consume a variety of foods, including fruits, vegetables, lean proteins, and whole grains. Avoid processed foods and excess sugars." },
-      { id: 2, title: "Iron-Rich Foods", details: "Include foods like spinach, lentils, and lean meats to prevent anemia during pregnancy." },
-      { id: 3, title: "Stay Hydrated", details: "Drink at least 8-10 glasses of water daily to stay hydrated and support your body's needs." },
-      { id: 4, title: "Limit Caffeine", details: "Avoid high-caffeine drinks as they may affect your baby's development. Opt for herbal teas." },
-      { id: 5, title: "Calcium-Rich Foods", details: "Consume dairy products, fortified soy milk, or leafy greens to strengthen your bones and your baby's." },
+      { id: 1, title: "Balanced Bites", details: "Fill your plate with colorful fruits, veggies, lean proteins, and whole grains, mama. Skip the processed stuff!" },
+      { id: 2, title: "Iron Boosters", details: "Spinach, lentils, and lean meats keep anemia away as you grow your little one." },
+      { id: 3, title: "Water Love", details: "Sip 8-10 glasses daily to keep you and baby glowing and flowing." },
     ],
     Exercise: [
-      { id: 6, title: "Prenatal Yoga", details: "Yoga improves flexibility, reduces stress, and helps prepare your body for labor." },
-      { id: 7, title: "Walking", details: "Daily walks boost circulation, prevent swelling, and keep you active." },
-      { id: 8, title: "Pelvic Floor Exercises", details: "Strengthen pelvic muscles with Kegel exercises to prepare for delivery." },
-      { id: 9, title: "Stretching", details: "Gentle stretches reduce back pain and improve posture during pregnancy." },
+      { id: 6, title: "Mama Yoga", details: "Stretch and breathe with prenatal yoga to ease into labor with calm and strength." },
+      { id: 7, title: "Gentle Walks", details: "A daily stroll keeps swelling down and spirits up—perfect for you and baby." },
     ],
     "Mental Health": [
-      { id: 10, title: "Seek Support", details: "Share your feelings with family, friends, or a counselor to manage stress." },
-      { id: 11, title: "Practice Mindfulness", details: "Meditate or engage in deep breathing exercises to reduce anxiety." },
-      { id: 12, title: "Adequate Sleep", details: "Ensure you get at least 7-8 hours of sleep each night for overall well-being." },
-      { id: 13, title: "Limit Screen Time", details: "Avoid excessive use of devices, especially before bed, to enhance mental clarity." },
+      { id: 10, title: "Heart Talks", details: "Chat with loved ones or a counselor to lighten your load, mama." },
+      { id: 11, title: "Mindful Moments", details: "Breathe deep or meditate to melt away worries." },
     ],
     Childcare: [
-      { id: 14, title: "Vaccination Schedule", details: "Follow the recommended vaccination schedule to protect your child from diseases." },
-      { id: 15, title: "Sterilize Bottles", details: "Always sterilize feeding bottles and utensils to maintain hygiene." },
-      { id: 16, title: "Safe Sleeping Practices", details: "Ensure your baby sleeps on their back to reduce the risk of SIDS (Sudden Infant Death Syndrome)." },
-      { id: 17, title: "Breastfeeding Techniques", details: "Learn proper latching techniques to ensure effective feeding and reduce discomfort." },
+      { id: 14, title: "Vaccine Hugs", details: "Stick to the schedule to shield your little one from harm." },
+      { id: 15, title: "Clean & Cozy", details: "Sterilize bottles to keep feeds safe and sweet." },
     ],
     "Pregnancy Tips": [
-      { id: 18, title: "Regular Check-Ups", details: "Attend prenatal visits to monitor your baby's growth and development." },
-      { id: 19, title: "Avoid Alcohol and Smoking", details: "These can harm your baby's health and lead to complications." },
-      { id: 20, title: "Comfortable Clothing", details: "Wear loose, breathable clothing to stay comfortable during pregnancy." },
-      { id: 21, title: "Side Sleeping", details: "Sleep on your left side to improve blood flow to the baby and avoid pressure on your organs." },
+      { id: 18, title: "Check-In Love", details: "Regular visits keep tabs on your baby’s blossoming growth." },
+      { id: 19, title: "Pure Bliss", details: "Skip alcohol and smoking to keep your baby’s world safe and sound." },
     ],
   };
 
   const faq = {
     Pregnancy: [
-      { id: 22, question: "What foods should I avoid?", answer: "Avoid raw fish, undercooked meat, high-mercury fish, and unpasteurized dairy products." },
-      { id: 23, question: "When should I call my doctor?", answer: "Contact your doctor if you experience severe cramping, bleeding, or reduced baby movements." },
-      { id: 24, question: "How can I manage morning sickness?", answer: "Eat small meals frequently, avoid strong odors, and sip ginger tea to ease nausea." },
+      { id: 22, question: "What’s off the menu?", answer: "Steer clear of raw fish, undercooked meats, and unpasteurized dairy, mama." },
+      { id: 23, question: "When to call for help?", answer: "Reach out if you feel sharp cramps, see bleeding, or notice less baby wiggle." },
     ],
     Delivery: [
-      { id: 25, question: "What are the signs of labor?", answer: "Signs include regular contractions, water breaking, and lower back pain." },
-      { id: 26, question: "How do I prepare for delivery?", answer: "Pack a hospital bag, attend childbirth classes, and have a birth plan ready." },
-      { id: 27, question: "When should I go to the hospital?", answer: "Head to the hospital when contractions are 5 minutes apart or your water breaks." },
+      { id: 25, question: "How do I know it’s time?", answer: "Regular contractions, water breaking, or back pain mean it’s go-time!" },
+      { id: 26, question: "Ready for the big day?", answer: "Pack your bag, join a class, and dream up your birth plan." },
     ],
     "Postnatal Care": [
-      { id: 28, question: "How can I recover after delivery?", answer: "Rest, eat nutritious meals, and stay hydrated to aid recovery." },
-      { id: 29, question: "What are signs of postpartum depression?", answer: "Persistent sadness, lack of energy, and difficulty bonding with your baby may indicate depression. Seek help if needed." },
-      { id: 30, question: "How do I care for the baby’s umbilical cord?", answer: "Keep it clean and dry; let it fall off naturally without pulling it." },
+      { id: 28, question: "Healing after baby?", answer: "Rest up, eat well, and sip water to bounce back beautifully." },
+      { id: 29, question: "Feeling blue?", answer: "If sadness lingers or bonding’s tough, talk to someone you trust." },
     ],
   };
 
   const categories = activeSection === "Health Tips" ? healthCategories : faqCategories;
-  const data =
-    activeSection === "Health Tips" ? healthTips[activeCategory] : faq[activeCategory];
+  const data = activeSection === "Health Tips" ? healthTips[activeCategory] : faq[activeCategory];
 
-  const renderItem = (item, isFAQ) => (
-    <TouchableOpacity
-      key={item.id}
-      style={styles.expandableItem}
-      onPress={() => setExpandedItem(expandedItem === item.id ? null : item.id)}
-    >
-      <View style={styles.expandableHeader}>
-        <Text style={styles.expandableTitle}>
-          {isFAQ ? item.question : item.title}
-        </Text>
-        <Ionicons
-          name={expandedItem === item.id ? "chevron-up-outline" : "chevron-down-outline"}
-          size={20}
-          color={COLORS.primary}
-        />
-      </View>
-      {expandedItem === item.id && (
-        <Text style={styles.expandableContent}>
-          {isFAQ ? item.answer : item.details}
-        </Text>
-      )}
-    </TouchableOpacity>
-  );
+  const toggleItem = (id) => {
+    setExpandedItem(expandedItem === id ? null : id);
+  };
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Toggle Section */}
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      {/* Header */}
+      <LinearGradient colors={["#FFF5F7", "#FFE4E6"]} style={styles.header}>
+        <Ionicons name="book" size={32} color="#FF6B6B" />
+        <Text style={styles.headerTitle}>Mama’s Wisdom</Text>
+        <Text style={styles.headerSubtitle}>Grow with love and knowledge</Text>
+      </LinearGradient>
+
+      {/* Section Toggle */}
       <View style={styles.toggleContainer}>
-        <TouchableOpacity
-          style={[
-            styles.toggleButton,
-            activeSection === "Health Tips" && styles.activeToggleButton,
-          ]}
-          onPress={() => {
-            setActiveSection("Health Tips");
-            setActiveCategory("Nutrition");
-          }}
-        >
-          <Text
-            style={[
-              styles.toggleText,
-              activeSection === "Health Tips" && styles.activeToggleText,
-            ]}
+        {["Health Tips", "FAQs"].map((section) => (
+          <TouchableOpacity
+            key={section}
+            style={styles.toggleButton}
+            onPress={() => {
+              setActiveSection(section);
+              setActiveCategory(section === "Health Tips" ? "Nutrition" : "Pregnancy");
+              setExpandedItem(null);
+            }}
           >
-            Health Tips
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.toggleButton,
-            activeSection === "FAQs" && styles.activeToggleButton,
-          ]}
-          onPress={() => {
-            setActiveSection("FAQs");
-            setActiveCategory("Pregnancy");
-          }}
-        >
-          <Text
-            style={[
-              styles.toggleText,
-              activeSection === "FAQs" && styles.activeToggleText,
-            ]}
-          >
-            FAQs
-          </Text>
-        </TouchableOpacity>
+            <LinearGradient
+              colors={activeSection === section ? ["#FF6B6B", "#FF8787"] : ["#F0F0F0", "#F8F9FA"]}
+              style={styles.toggleGradient}
+            >
+              <Text style={[styles.toggleText, activeSection === section && styles.activeToggleText]}>
+                {section}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {/* Categories */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryList}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryContainer}>
         {categories.map((category) => (
           <TouchableOpacity
             key={category}
@@ -150,14 +105,15 @@ const HealthEducationPages = () => {
               styles.categoryButton,
               activeCategory === category && styles.activeCategoryButton,
             ]}
-            onPress={() => setActiveCategory(category)}
+            onPress={() => {
+              setActiveCategory(category);
+              setExpandedItem(null);
+            }}
           >
-            <Text
-              style={[
-                styles.categoryText,
-                activeCategory === category && styles.activeCategoryText,
-              ]}
-            >
+            <Text style={[
+              styles.categoryText,
+              activeCategory === category && styles.activeCategoryText,
+            ]}>
               {category}
             </Text>
           </TouchableOpacity>
@@ -165,8 +121,26 @@ const HealthEducationPages = () => {
       </ScrollView>
 
       {/* Content */}
-      <View style={styles.section}>
-        {data.map((item) => renderItem(item, activeSection === "FAQs"))}
+      <View style={styles.contentSection}>
+        {data.map((item) => (
+          <View key={item.id} style={styles.itemCard}>
+            <TouchableOpacity style={styles.itemHeader} onPress={() => toggleItem(item.id)}>
+              <Text style={styles.itemTitle}>
+                {activeSection === "FAQs" ? item.question : item.title}
+              </Text>
+              <Ionicons
+                name={expandedItem === item.id ? "chevron-up" : "chevron-down"}
+                size={20}
+                color="#FF6B6B"
+              />
+            </TouchableOpacity>
+            {expandedItem === item.id && (
+              <Text style={styles.itemDetails}>
+                {activeSection === "FAQs" ? item.answer : item.details}
+              </Text>
+            )}
+          </View>
+        ))}
       </View>
     </ScrollView>
   );
@@ -175,77 +149,104 @@ const HealthEducationPages = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    padding: SIZES.padding,
+    backgroundColor: "#F8F9FA",
+  },
+  contentContainer: {
+    padding: 16,
+  },
+  header: {
+    padding: 24,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#FF6B6B",
+    marginTop: 8,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: "#666",
+    marginTop: 4,
   },
   toggleContainer: {
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "space-between",
     marginBottom: 20,
   },
   toggleButton: {
     flex: 1,
-    padding: 10,
-    alignItems: "center",
-    borderRadius: SIZES.borderRadius,
-    marginHorizontal: 5,
-    backgroundColor: COLORS.secondary,
+    marginHorizontal: 4,
+    borderRadius: 12,
+    overflow: "hidden",
   },
-  activeToggleButton: {
-    backgroundColor: COLORS.primary,
+  toggleGradient: {
+    padding: 12,
+    alignItems: "center",
   },
   toggleText: {
     fontSize: 16,
-    color: COLORS.textSecondary,
+    color: "#777",
+    fontWeight: "600",
   },
   activeToggleText: {
-    color: COLORS.background,
-    fontWeight: "bold",
+    color: "#FFF",
   },
-  categoryList: {
+  categoryContainer: {
     marginBottom: 20,
   },
   categoryButton: {
-    padding: 10,
-    backgroundColor: COLORS.secondary,
-    borderRadius: SIZES.borderRadius,
-    marginRight: 10,
+    backgroundColor: "#FFF",
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginRight: 12,
+    elevation: 2,
   },
   activeCategoryButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: "#FF6B6B",
   },
   categoryText: {
-    color: COLORS.textSecondary,
     fontSize: 14,
+    color: "#777",
+    fontWeight: "500",
   },
   activeCategoryText: {
-    color: COLORS.background,
-    fontWeight: "bold",
+    color: "#FFF",
   },
-  section: {
+  contentSection: {
     marginBottom: 20,
   },
-  expandableItem: {
-    padding: 15,
-    marginBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.secondary,
+  itemCard: {
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    marginBottom: 12,
+    elevation: 2,
+    overflow: "hidden",
   },
-  expandableHeader: {
+  itemHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    padding: 16,
+    backgroundColor: "#FFF5F7",
   },
-  expandableTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: COLORS.textPrimary,
+  itemTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    flex: 1,
+    marginRight: 12,
   },
-  expandableContent: {
-    marginTop: 10,
+  itemDetails: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: "#555",
     lineHeight: 20,
+    padding: 16,
+    paddingTop: 8,
   },
 });
 

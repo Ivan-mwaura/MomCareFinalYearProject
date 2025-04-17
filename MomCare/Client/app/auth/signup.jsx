@@ -5,13 +5,13 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { COLORS, SIZES } from "../styles/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
@@ -21,11 +21,11 @@ const Signup = () => {
 
   const handleSignup = () => {
     if (!email || !password || !confirmPassword) {
-      Alert.alert("Error", "Please fill in all fields.");
+      alert("Please fill in all fields, mama!");
     } else if (password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match.");
+      alert("Passwords don’t match, sweetie!");
     } else {
-      Alert.alert("Success", "Account created!");
+      alert("Welcome to the circle, mama!");
       router.push("/auth/login");
     }
   };
@@ -35,57 +35,71 @@ const Signup = () => {
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Title and Subtitle */}
-        <Text style={styles.title}>Create an Account</Text>
-        <Text style={styles.subtitle}>
-          Join MomCare and take the first step towards a healthy and confident pregnancy journey.
-        </Text>
-
-        {/* Input Fields */}
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor={COLORS.textSecondary}
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor={COLORS.textSecondary}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoCapitalize="none"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Confirm Password"
-          placeholderTextColor={COLORS.textSecondary}
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry
-          autoCapitalize="none"
-        />
-
-        {/* Sign Up Button */}
-        <TouchableOpacity style={styles.buttonPrimary} onPress={handleSignup}>
-          <Text style={styles.buttonText}>Sign Up</Text>
-        </TouchableOpacity>
-
-        {/* Login Link */}
-        <TouchableOpacity
-          onPress={() => router.push("/auth/login")}
-          style={styles.linkWrapper}
-        >
-          <Text style={styles.link}>
-            Already have an account? <Text style={styles.linkHighlight}>Login</Text>
+      <LinearGradient colors={["#FFF5F7", "#FFE4E6"]} style={styles.container}>
+        <ScrollView contentContainerStyle={styles.contentContainer}>
+          {/* Header */}
+          <Ionicons name="heart" size={48} color="#FF6B6B" style={styles.headerIcon} />
+          <Text style={styles.title}>Join Mama’s Circle</Text>
+          <Text style={styles.subtitle}>
+            Start your journey with love and care.
           </Text>
-        </TouchableOpacity>
-      </ScrollView>
+
+          {/* Input Fields */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="mail" size={20} color="#FF6B6B" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Your Email"
+              placeholderTextColor="#999"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
+          <View style={styles.inputContainer}>
+            <Ionicons name="lock-closed" size={20} color="#FF6B6B" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Your Password"
+              placeholderTextColor="#999"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+            />
+          </View>
+          <View style={styles.inputContainer}>
+            <Ionicons name="lock-closed" size={20} color="#FF6B6B" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Confirm Password"
+              placeholderTextColor="#999"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+              autoCapitalize="none"
+            />
+          </View>
+
+          {/* Sign Up Button */}
+          <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
+            <LinearGradient colors={["#FF6B6B", "#FF8787"]} style={styles.buttonGradient}>
+              <Text style={styles.buttonText}>Step In</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          {/* Login Link */}
+          <TouchableOpacity
+            onPress={() => router.push("/auth/login")}
+            style={styles.loginLink}
+          >
+            <Text style={styles.loginText}>
+              Already with us? <Text style={styles.loginHighlight}>Come Back</Text>
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </LinearGradient>
     </KeyboardAvoidingView>
   );
 };
@@ -93,72 +107,75 @@ const Signup = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+  },
+  contentContainer: {
+    flexGrow: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: SIZES.padding,
-    paddingVertical: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 40,
+  },
+  headerIcon: {
+    marginBottom: 24,
   },
   title: {
-    fontSize: 30,
+    fontSize: 32,
     fontWeight: "700",
-    color: COLORS.textPrimary,
-    marginBottom: 10,
+    color: "#FF6B6B",
+    marginBottom: 12,
     textAlign: "center",
-    letterSpacing: 1.2,
   },
   subtitle: {
     fontSize: 16,
-    color: COLORS.textSecondary,
+    color: "#666",
     textAlign: "center",
-    lineHeight: 24,
-    marginBottom: 30,
-    paddingHorizontal: 20,
+    marginBottom: 40,
+    lineHeight: 22,
   },
-  input: {
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
     width: "100%",
-    padding: 15,
-    backgroundColor: COLORS.secondary,
-    borderRadius: SIZES.borderRadius,
-    marginBottom: 15,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    marginBottom: 16,
+    paddingHorizontal: 12,
     elevation: 2,
   },
-  buttonPrimary: {
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: "#333",
+  },
+  signupButton: {
     width: "100%",
-    backgroundColor: COLORS.accent,
-    paddingVertical: 15,
-    borderRadius: SIZES.borderRadius,
+    borderRadius: 12,
+    overflow: "hidden",
+    marginBottom: 24,
+  },
+  buttonGradient: {
+    padding: 16,
     alignItems: "center",
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 5,
   },
   buttonText: {
-    color: COLORS.background,
-    fontWeight: "bold",
     fontSize: 18,
+    fontWeight: "600",
+    color: "#FFF",
   },
-  linkWrapper: {
-    marginTop: 10,
+  loginLink: {
+    marginTop: 8,
   },
-  link: {
-    color: COLORS.textSecondary,
+  loginText: {
     fontSize: 14,
-    textAlign: "center",
+    color: "#777",
   },
-  linkHighlight: {
-    color: COLORS.accent,
-    fontWeight: "bold",
+  loginHighlight: {
+    color: "#FF6B6B",
+    fontWeight: "600",
   },
 });
 

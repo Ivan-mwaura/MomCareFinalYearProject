@@ -11,7 +11,7 @@ import {
   Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, SIZES } from "../styles/theme";
+import { LinearGradient } from "expo-linear-gradient";
 
 const SupportAndFeedback = () => {
   const assignedCHW = {
@@ -20,8 +20,7 @@ const SupportAndFeedback = () => {
     contact: "+1234567890",
     email: "jane.doe@healthcare.com",
     profilePicture: require("../../assets/profile.jpg"),
-    description:
-      "Your dedicated Community Health Worker (CHW) is here to assist with any health-related queries or concerns.",
+    description: "Your caring guide for all things mama and baby.",
   };
 
   const otherCHWs = [
@@ -31,8 +30,7 @@ const SupportAndFeedback = () => {
       contact: "+1234567891",
       email: "john.smith@healthcare.com",
       profilePicture: require("../../assets/profile.jpg"),
-      description:
-        "Specializes in antenatal / postnatal care for mothers",
+      description: "Here for your prenatal and postnatal journey.",
     },
     {
       id: "3",
@@ -40,8 +38,7 @@ const SupportAndFeedback = () => {
       contact: "+1234567892",
       email: "emily.brown@healthcare.com",
       profilePicture: require("../../assets/profile.jpg"),
-      description:
-        "Available for consultations related to maternal health.",
+      description: "Ready to support your maternal wellness.",
     },
     {
       id: "4",
@@ -49,100 +46,95 @@ const SupportAndFeedback = () => {
       contact: "+1234567893",
       email: "lisa.ray@healthcare.com",
       profilePicture: require("../../assets/profile.jpg"),
-      description: "Expert in postpartum recovery and lactation support.",
+      description: "Your postpartum and breastfeeding buddy.",
     },
   ];
 
   const [selectedCHW, setSelectedCHW] = useState(assignedCHW);
   const flatListRef = useRef(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleCall = () => {
-    Linking.openURL(`tel:${selectedCHW.contact}`);
+    Linking.openURL(`tel:${selectedCHW.contact}`).catch(() =>
+      alert("Oops! Couldn’t make the call. Try again, mama.")
+    );
   };
 
   const handleFeedbackSubmit = () => {
-    console.log("Feedback submitted");
+    alert("Thank you, mama! Your feedback means the world to us.");
   };
 
-
-
   const renderCHWCard = ({ item }) => (
-    <TouchableOpacity
-      style={styles.profileCard}
-      onPress={() => setSelectedCHW(item)}
-    >
-      <Image source={item.profilePicture} style={styles.profilePicture} />
-      <View style={styles.profileInfo}>
-        <Text style={styles.name}>{item.name}</Text>
-        <Text style={styles.email}>{item.email}</Text>
-        <Text style={styles.description}>{item.description}</Text>
-      </View>
+    <TouchableOpacity style={styles.chwCard} onPress={() => setSelectedCHW(item)}>
+      <Image source={item.profilePicture} style={styles.chwImage} />
+      <Text style={styles.chwName}>{item.name}</Text>
+      <Text style={styles.chwDescription}>{item.description}</Text>
     </TouchableOpacity>
   );
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Assigned CHW Section */}
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      {/* Header */}
+      <LinearGradient colors={["#FFF5F7", "#FFE4E6"]} style={styles.header}>
+        <Ionicons name="heart" size={32} color="#FF6B6B" />
+        <Text style={styles.headerTitle}>Mama’s Support Hub</Text>
+        <Text style={styles.headerSubtitle}>We’re here for you every step</Text>
+      </LinearGradient>
+
+      {/* Assigned CHW */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Your Assigned CHW</Text>
-        <View style={styles.profileCard}>
-          <Image source={selectedCHW.profilePicture} style={styles.profilePicture} />
-          <View style={styles.profileInfo}>
-            <Text style={styles.name}>{selectedCHW.name}</Text>
-            <Text style={styles.email}>{selectedCHW.email}</Text>
-            <Text style={styles.description}>{selectedCHW.description}</Text>
+        <Text style={styles.sectionTitle}>Your Personal CHW</Text>
+        <View style={styles.assignedCard}>
+          <Image source={selectedCHW.profilePicture} style={styles.assignedImage} />
+          <View style={styles.assignedInfo}>
+            <Text style={styles.assignedName}>{selectedCHW.name}</Text>
+            <Text style={styles.assignedDescription}>{selectedCHW.description}</Text>
+            <View style={styles.actionButtons}>
+              <TouchableOpacity style={styles.actionButton} onPress={() => console.log("Chat initiated")}>
+                <LinearGradient colors={["#FF6B6B", "#FF8787"]} style={styles.actionGradient}>
+                  <Ionicons name="chatbubbles" size={20} color="#FFF" />
+                  <Text style={styles.actionText}>Chat</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.actionButton} onPress={handleCall}>
+                <LinearGradient colors={["#FF6B6B", "#FF8787"]} style={styles.actionGradient}>
+                  <Ionicons name="call" size={20} color="#FFF" />
+                  <Text style={styles.actionText}>Call</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-
-        {/* Chat and Call Options */}
-        <View style={styles.actions}>
-          <TouchableOpacity style={styles.actionButton} onPress={() => console.log("Chat initiated")}>
-            <Ionicons name="chatbubbles-outline" size={24} color={COLORS.background} />
-            <Text style={styles.actionText}>Chat</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={handleCall}>
-            <Ionicons name="call-outline" size={24} color={COLORS.background} />
-            <Text style={styles.actionText}>Call</Text>
-          </TouchableOpacity>
-        </View>
       </View>
 
-      {/* Other CHWs Section */}
+      {/* Other CHWs */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Want to Contact Another CHW?</Text>
-        <View style={styles.horizontalControls}>
-          {/* Previous Button */}
-         
-          {/* FlatList with Cards */}
-          <FlatList
-            ref={flatListRef}
-            data={otherCHWs}
-            keyExtractor={(item) => item.id}
-            renderItem={renderCHWCard}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalList}
-            onScrollToIndexFailed={() => {}}
-          />
-
-        </View>
+        <Text style={styles.sectionTitle}>More Caring Helpers</Text>
+        <FlatList
+          ref={flatListRef}
+          data={otherCHWs}
+          keyExtractor={(item) => item.id}
+          renderItem={renderCHWCard}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chwList}
+        />
       </View>
 
-      {/* Feedback Section */}
+      {/* Feedback */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Provide Feedback</Text>
-        <Text style={styles.feedbackLabel}>
-          Share your thoughts about the app or your healthcare experience:
-        </Text>
+        <Text style={styles.sectionTitle}>Tell Us, Mama</Text>
+        <Text style={styles.feedbackPrompt}>How can we make your journey even better?</Text>
         <TextInput
           style={styles.feedbackInput}
-          placeholder="Write your feedback here..."
-          placeholderTextColor={COLORS.textSecondary}
+          placeholder="Share your thoughts here..."
+          placeholderTextColor="#999"
           multiline
+          numberOfLines={4}
         />
-        <TouchableOpacity style={styles.feedbackButton} onPress={handleFeedbackSubmit}>
-          <Text style={styles.feedbackButtonText}>Submit Feedback</Text>
+        <TouchableOpacity style={styles.submitButton} onPress={handleFeedbackSubmit}>
+          <LinearGradient colors={["#FF6B6B", "#FF8787"]} style={styles.submitGradient}>
+            <Text style={styles.submitText}>Send Love</Text>
+          </LinearGradient>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -152,124 +144,145 @@ const SupportAndFeedback = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    padding: SIZES.padding,
+    backgroundColor: "#F8F9FA",
+  },
+  contentContainer: {
+    padding: 16,
+  },
+  header: {
+    padding: 24,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#FF6B6B",
+    marginTop: 8,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: "#666",
+    marginTop: 4,
   },
   section: {
-    marginBottom: 30,
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 17,
-    fontStyle: "italic",
-    fontWeight: "bold",
-    color: COLORS.primary,
-    marginBottom: 15,
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#FF6B6B",
+    marginBottom: 12,
   },
-  profileCard: {
-    width: SIZES.width * 0.85, // Responsive card width
-    marginHorizontal: 10,
-    backgroundColor: COLORS.secondary,
-    borderRadius: SIZES.borderRadius,
-    padding: 15,
+  assignedCard: {
+    backgroundColor: "#FFF",
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: "row",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     elevation: 3,
   },
-  horizontalList: {
-    flexGrow: 1,
-    paddingHorizontal: SIZES.padding,
-  },
-  horizontalControls: {
-    flexDirection: "row",
-    alignItems: "flex-start", // Align buttons to the top
-    justifyContent: "space-between",
-    width: "99%",
-  },
-  navButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 20,
-    backgroundColor: COLORS.secondary,
-    elevation: 2,
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-  profilePicture: {
+  assignedImage: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    marginBottom: 10,
+    marginRight: 16,
   },
-  profileInfo: {
+  assignedInfo: {
     flex: 1,
   },
-  name: {
+  assignedName: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: COLORS.textPrimary,
-    marginBottom: 5,
+    fontWeight: "600",
+    color: "#333",
   },
-  email: {
+  assignedDescription: {
     fontSize: 14,
-    color: COLORS.textSecondary,
-    marginBottom: 10,
+    color: "#777",
+    marginVertical: 6,
   },
-  description: {
-    fontSize: 14,
-    color: COLORS.textPrimary,
-  },
-  actions: {
+  actionButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 15,
   },
   actionButton: {
     flex: 1,
+    marginHorizontal: 4,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  actionGradient: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: COLORS.primary,
-    borderRadius: SIZES.borderRadius,
-    padding: 15,
-    marginHorizontal: 5,
+    padding: 12,
   },
   actionText: {
-    color: COLORS.background,
-    fontSize: 16,
-    fontWeight: "bold",
-    marginLeft: 10,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FFF",
+    marginLeft: 8,
   },
-  feedbackLabel: {
+  chwList: {
+    paddingVertical: 8,
+  },
+  chwCard: {
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    padding: 12,
+    marginRight: 12,
+    width: 200,
+    alignItems: "center",
+    elevation: 2,
+  },
+  chwImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginBottom: 8,
+  },
+  chwName: {
     fontSize: 16,
-    color: COLORS.textPrimary,
-    marginBottom: 10,
+    fontWeight: "600",
+    color: "#333",
+    textAlign: "center",
+  },
+  chwDescription: {
+    fontSize: 13,
+    color: "#777",
+    textAlign: "center",
+    marginTop: 4,
+  },
+  feedbackPrompt: {
+    fontSize: 15,
+    color: "#555",
+    marginBottom: 12,
   },
   feedbackInput: {
-    backgroundColor: COLORS.secondary,
-    borderRadius: SIZES.borderRadius,
-    padding: 15,
-    fontSize: 16,
-    color: COLORS.textPrimary,
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 15,
+    color: "#333",
     textAlignVertical: "top",
-    marginBottom: 15,
     height: 120,
+    elevation: 2,
+    marginBottom: 16,
   },
-  feedbackButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: SIZES.borderRadius,
-    padding: 15,
+  submitButton: {
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  submitGradient: {
+    padding: 14,
     alignItems: "center",
   },
-  feedbackButtonText: {
-    color: COLORS.background,
+  submitText: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "600",
+    color: "#FFF",
   },
 });
 

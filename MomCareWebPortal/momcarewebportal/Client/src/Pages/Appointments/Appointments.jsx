@@ -17,6 +17,7 @@ const Appointments = () => {
   const [viewingAppointment, setViewingAppointment] = useState(null);
   const [reschedulingAppointment, setReschedulingAppointment] = useState(null);
   const [cancelingAppointment, setCancelingAppointment] = useState(null);
+  const [viewingDescription, setViewingDescription] = useState(null);
 
   const appointmentsPerPage = 10;
   const dispatch = useDispatch();
@@ -210,25 +211,32 @@ const Appointments = () => {
                 <tr key={appointment.id}>
                   <td>{appointment.motherName}</td>
                   <td>{appointment.provider}</td>
-                  <td>{appointment.type}</td>
+                  <td style={{width:'200px'}}>{appointment.type}</td>
                   <td>{appointment.location}</td>
                   <td>{appointment.date}</td>
                   <td>{appointment.time}</td>
-                  <td>{appointment.description}</td>
+                  <td className="description-cell" title={appointment.description}>{appointment.description}</td>
                   <td>{appointment.status}</td>
                   <td>
-                    <button onClick={() => handleViewAppointment(appointment)}>
-                      View
-                    </button>
-                    <button onClick={() => handleApproveAppointment(appointment.id)}>
-                      Approve
-                    </button>
-                    <button onClick={() => handleRescheduleAppointment(appointment)}>
-                      Reschedule
-                    </button>
-                    <button onClick={() => handleCancelAppointment(appointment)}>
-                      Cancel
-                    </button>
+                    <div className="actions">
+                      <button onClick={() => handleViewAppointment(appointment)}>
+                        View
+                      </button>
+                      {appointment.status === "Pending" && (
+                        <button onClick={() => handleApproveAppointment(appointment.id)}>
+                          Approve
+                        </button>
+                      )}
+                      <button onClick={() => handleRescheduleAppointment(appointment)}>
+                        Reschedule
+                      </button>
+                      <button onClick={() => handleCancelAppointment(appointment)}>
+                        Cancel
+                      </button>
+                      <button onClick={() => setViewingDescription(appointment)}>
+                        View Details
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -312,6 +320,23 @@ const Appointments = () => {
             <p>Are you sure you want to cancel this appointment?</p>
             <button onClick={handleConfirmCancel}>Yes</button>
             <button onClick={handleCancelCancel}>No</button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Description Details */}
+      {viewingDescription && (
+        <div className="modal">
+          <div className="modal-content">
+            <h2>Appointment Details</h2>
+            <div className="description-content">
+              <ul className="description-list">
+                {viewingDescription.description.split(';').map((item, index) => (
+                  <li key={index}>{item.trim()}</li>
+                ))}
+              </ul>
+            </div>
+            <button onClick={() => setViewingDescription(null)}>Close</button>
           </div>
         </div>
       )}

@@ -12,11 +12,13 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import axios from "axios";
+import { BACKEND_URL } from "@env";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Toast from "react-native-toast-message";
-import { COLORS, SIZES } from "../styles/theme";
-import { BACKEND_URL } from "@env";
+import * as Notifications from 'expo-notifications';
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -28,35 +30,53 @@ const Login = () => {
     if (!email || !password) {
       Toast.show({
         type: "error",
-        text1: "Error",
-        text2: "Please fill in all fields.",
+        text1: "Oops!",
+        text2: "Please fill in both fields, mama.",
       });
       return;
     }
 
     setLoading(true);
     try {
-      // Replace with your actual backend login endpoint
       const response = await axios.post(`${BACKEND_URL}/api/auth/login`, {
         email,
         password,
       });
       const { token, user } = response.data;
-      // Store token in AsyncStorage (or secure storage)
       await AsyncStorage.setItem("token", token);
       await AsyncStorage.setItem("user", JSON.stringify(user));
+
+      // Get and send Expo push token after successful login
+      const expoPushToken = await AsyncStorage.getItem('expoPushToken');
+      if (expoPushToken) {
+        try {
+          await axios.post(
+            `${BACKEND_URL}/api/mothers/update-expo-token`,
+            { expoPushToken },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+        } catch (error) {
+          console.error('Error sending Expo token to backend:', error);
+        }
+      }
+
       Toast.show({
         type: "success",
-        text1: "Success",
-        text2: "You are logged in!",
+        text1: "Welcome Back!",
+        text2: "You're in, mama!",
       });
       router.push("/pages/dashboard");
     } catch (error) {
-      console.error("Login error:", error.response?.data || error.message);
+      console.error("Login error:", error.message);
       Toast.show({
         type: "error",
-        text1: "Login Failed",
-        text2: error.response?.data?.message || "An unexpected error occurred.",
+        text1: "Oh No!",
+        text2: error.response?.data?.message || "Something went wrong, sweetie.",
       });
     } finally {
       setLoading(false);
@@ -68,74 +88,83 @@ const Login = () => {
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Logo */}
-        <Image
-          source={require("../../assets/mom-care-logo.png")}
-          style={styles.logo}
-        />
+      <LinearGradient colors={["#FFF5F7", "#FFE4E6"]} style={styles.container}>
+        <ScrollView contentContainerStyle={styles.contentContainer}>
+          {/* Logo */}
+          <Image
+            source={require("../../assets/mom-care-logo.png")}
+            style={styles.logo}
+          />
 
-        {/* Welcome Text */}
-        <Text style={styles.title}>Welcome Back</Text>
-        <Text style={styles.subtitle}>
-          Log in to continue caring for yourself and your loved ones.
-        </Text>
-
-        {/* Email Input */}
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor={COLORS.textSecondary}
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-
-        {/* Password Input */}
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor={COLORS.textSecondary}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoCapitalize="none"
-        />
-
-        {/* Forgot Password Link */}
-        <TouchableOpacity
-          onPress={() => router.push("/auth/forgotpassword")}
-          style={styles.forgotPasswordLink}
-        >
-          <Text style={styles.link}>Forgot Password?</Text>
-        </TouchableOpacity>
-
-        {/* Login Button */}
-        <TouchableOpacity
-          style={styles.buttonPrimary}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color={COLORS.background} />
-          ) : (
-            <Text style={styles.buttonText}>Login</Text>
-          )}
-        </TouchableOpacity>
-
-        {/* Sign Up Link */}
-        <TouchableOpacity
-          onPress={() => router.push("/auth/signup")}
-          style={styles.signUpLink}
-        >
-          <Text style={styles.link}>
-            Don’t have an account?{" "}
-            <Text style={styles.linkHighlight}>Sign Up</Text>
+          {/* Welcome Text */}
+          <Text style={styles.title}>Hello, Mama!</Text>
+          <Text style={styles.subtitle}>
+            Step back into your caring space with love.
           </Text>
-        </TouchableOpacity>
-      </ScrollView>
-      <Toast />
+
+          {/* Email Input */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="mail" size={20} color="#FF6B6B" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Your Email"
+              placeholderTextColor="#999"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
+
+          {/* Password Input */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="lock-closed" size={20} color="#FF6B6B" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Your Password"
+              placeholderTextColor="#999"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+            />
+          </View>
+
+          {/* Forgot Password Link */}
+          <TouchableOpacity
+            onPress={() => router.push("/auth/forgotpassword")}
+            style={styles.forgotLink}
+          >
+            <Text style={styles.linkText}>Forgot Password?</Text>
+          </TouchableOpacity>
+
+          {/* Login Button */}
+          <TouchableOpacity
+            style={styles.loginButton}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            <LinearGradient colors={["#FF6B6B", "#FF8787"]} style={styles.buttonGradient}>
+              {loading ? (
+                <ActivityIndicator size="small" color="#FFF" />
+              ) : (
+                <Text style={styles.buttonText}>Come In</Text>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+
+          {/* Sign Up Link */}
+          <TouchableOpacity
+            onPress={() => router.push("/auth/signup")}
+            style={styles.signUpLink}
+          >
+            <Text style={styles.signUpText}>
+              New here? <Text style={styles.signUpHighlight}>Join the Mama Circle</Text>
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+        <Toast />
+      </LinearGradient>
     </KeyboardAvoidingView>
   );
 };
@@ -143,79 +172,86 @@ const Login = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+  },
+  contentContainer: {
+    flexGrow: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: SIZES.padding,
-    paddingVertical: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 40,
   },
   logo: {
-    width: 140,
-    height: 140,
-    marginBottom: 30,
+    width: 120,
+    height: 120,
+    marginBottom: 32,
   },
   title: {
-    fontSize: 30,
-    fontWeight: "bold",
-    color: COLORS.textPrimary,
-    marginBottom: 10,
+    fontSize: 32,
+    fontWeight: "700",
+    color: "#FF6B6B",
+    marginBottom: 12,
     textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
-    color: COLORS.textSecondary,
+    color: "#666",
     textAlign: "center",
+    marginBottom: 40,
     lineHeight: 22,
-    marginBottom: 30,
-    paddingHorizontal: 20,
   },
-  input: {
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
     width: "100%",
-    padding: 15,
-    backgroundColor: COLORS.secondary,
-    borderRadius: SIZES.borderRadius,
-    marginBottom: 15,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    marginBottom: 16,
+    paddingHorizontal: 12,
     elevation: 2,
   },
-  forgotPasswordLink: {
-    alignSelf: "flex-end",
-    marginBottom: 20,
+  inputIcon: {
+    marginRight: 12,
   },
-  buttonPrimary: {
+  input: {
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: "#333",
+  },
+  forgotLink: {
+    alignSelf: "flex-end",
+    marginBottom: 24,
+  },
+  linkText: {
+    fontSize: 14,
+    color: "#FF6B6B",
+    fontWeight: "500",
+  },
+  loginButton: {
     width: "100%",
-    backgroundColor: COLORS.accent,
-    paddingVertical: 15,
-    borderRadius: SIZES.borderRadius,
+    borderRadius: 12,
+    overflow: "hidden",
+    marginBottom: 24,
+  },
+  buttonGradient: {
+    padding: 16,
     alignItems: "center",
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 5,
   },
   buttonText: {
-    color: COLORS.background,
-    fontWeight: "bold",
     fontSize: 18,
+    fontWeight: "600",
+    color: "#FFF",
   },
   signUpLink: {
-    marginTop: 10,
+    marginTop: 8,
   },
-  link: {
-    color: COLORS.primary,
+  signUpText: {
     fontSize: 14,
+    color: "#777",
   },
-  linkHighlight: {
-    color: COLORS.accent,
-    fontWeight: "bold",
+  signUpHighlight: {
+    color: "#FF6B6B",
+    fontWeight: "600",
   },
 });
 

@@ -27,7 +27,27 @@ const Sidebar = () => {
                 isActive ? "active-link" : ""
               }
             >
-              Patient Management
+              Mothers Management
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/health-records"
+              className={({ isActive }) =>
+                isActive ? "active-link" : ""
+              }
+            >
+              Health Records
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/appointment-record"
+              className={({ isActive }) =>
+                isActive ? "active-link" : ""
+              }
+            >
+              Appointment Record
             </NavLink>
           </li>
           <li>
@@ -68,6 +88,16 @@ const Sidebar = () => {
               }
             >
               CHW Management
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/doctors"
+              className={({ isActive }) =>
+                isActive ? "active-link" : ""
+              }
+            >
+              Doctor Management
             </NavLink>
           </li>
           <li>

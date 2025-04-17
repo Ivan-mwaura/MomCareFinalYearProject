@@ -1,22 +1,58 @@
-import React, { useState } from "react";
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from "chart.js";
-import { Line, Bar } from "react-chartjs-2";
-import "./Dashboard.scss";
-
+import React, { useState, useEffect } from 'react';
+import { Line, Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import axios from 'axios';
+import Cookies from 'js-cookie';
+import './Dashboard.scss';
 
 // Register required components for Chart.js
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
 const Dashboard = () => {
   const [darkMode, setDarkMode] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [riskFilter, setRiskFilter] = useState("All");
-  const [toDoList, setToDoList] = useState([
-    { id: 1, task: "Follow up with Jane Doe", completed: false },
-    { id: 2, task: "Schedule appointment for Mary Wanjiru", completed: false },
-    { id: 3, task: "Update Lucy Akinyi's records", completed: false },
-  ]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [riskFilter, setRiskFilter] = useState('all');
+  const [dashboardData, setDashboardData] = useState({
+    totalMothers: 0,
+    highRiskCases: 0,
+    upcomingAppointments: 0,
+    activeCHWs: 0,
+    appointmentTrends: [],
+    riskChanges: [],
+    chwPerformance: [],
+    upcomingAppointmentsList: [],
+    recentAlerts: []
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const token = Cookies.get('token');
+        if (!token) {
+          throw new Error('No authentication token found');
+        }
+
+        // Use the correct API endpoint
+        const response = await axios.get('http://localhost:5000/api/dashboard', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        console.log('Dashboard data received:', response.data); // Debug log
+        setDashboardData(response.data);
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err); // Debug log
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -31,174 +67,184 @@ const Dashboard = () => {
     setRiskFilter(event.target.value);
   };
 
-  const toggleTaskCompletion = (id) => {
-    setToDoList((prevList) =>
-      prevList.map((task) =>
-        task.id === id ? { ...task, completed: !task.completed } : task
-      )
-    );
-  };
+  if (loading) {
+    return <div className="dashboard-loading">Loading dashboard data...</div>;
+  }
 
-  const user = {
-    firstName: "Ivy",
-    lastName: "Mitchelle",
-  };
-  const userInitials = `${user.firstName[0]}${user.lastName[0]}`;
+  if (error) {
+    return <div className="dashboard-error">Error: {error}</div>;
+  }
 
-
-
-  const filteredMothers = [
-    { name: "Jane Doe", risk: "High", appointment: "2024-11-25", notification: "Urgent case flagged" },
-    { name: "Mary Wanjiru", risk: "Medium", appointment: "2024-11-26", notification: "Follow-up required" },
-    { name: "Lucy Akinyi", risk: "Low", appointment: "2024-12-01", notification: "No alerts" },
-  ]
-    .filter((mother) =>
-      mother.name.toLowerCase().includes(searchQuery)
-    )
-    .filter((mother) =>
-      riskFilter === "All" || mother.risk === riskFilter
-    );
-
-  const riskTrendData = {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+  // Appointment trends data
+  const appointmentTrendsData = {
+    labels: dashboardData?.appointmentTrends?.map(trend => new Date(trend.date).toLocaleDateString()) || [],
     datasets: [
       {
-        label: "High-Risk Cases",
-        data: [12, 19, 10, 15, 22, 30],
-        borderColor: "#FF6B8A",
-        backgroundColor: "rgba(255, 107, 138, 0.3)",
-        fill: true,
-      },
-    ],
+        label: 'Appointments',
+        data: dashboardData?.appointmentTrends?.map(trend => parseInt(trend.count)) || [],
+        borderColor: '#FF6B8A',
+        backgroundColor: 'rgba(255, 107, 138, 0.1)',
+        tension: 0.3,
+        fill: true
+      }
+    ]
   };
 
+  // Risk level changes data
+  const riskChangesData = {
+    labels: dashboardData?.riskChanges?.map(change => new Date(change.date).toLocaleDateString()) || [],
+    datasets: [
+      {
+        label: 'High Risk',
+        data: dashboardData?.riskChanges?.map(change => parseInt(change.high)) || [],
+        borderColor: '#FF6B8A',
+        backgroundColor: 'rgba(255, 107, 138, 0.1)',
+        tension: 0.3,
+        fill: true
+      },
+      {
+        label: 'Low Risk',
+        data: dashboardData?.riskChanges?.map(change => parseInt(change.low)) || [],
+        borderColor: '#63D8D8',
+        backgroundColor: 'rgba(99, 216, 216, 0.1)',
+        tension: 0.3,
+        fill: true
+      }
+    ]
+  };
+
+  // CHW performance data
   const chwPerformanceData = {
-    labels: ["Susan", "Mary", "John", "Lucy"],
+    labels: dashboardData?.chwPerformance?.map(chw => chw.name) || [],
     datasets: [
       {
-        label: "Follow-ups Completed",
-        data: [15, 25, 20, 10],
-        backgroundColor: ["#FF6B8A", "#FFB6C1", "#FFE6EB", "#FF6B8A"],
+        label: 'Completed Follow-ups',
+        data: dashboardData?.chwPerformance?.map(chw => parseInt(chw.completedFollowUps)) || [],
+        backgroundColor: '#FFE6EB',
+        borderColor: '#FF6B8A'
       },
-    ],
+      {
+        label: 'Total Mothers',
+        data: dashboardData?.chwPerformance?.map(chw => parseInt(chw.totalMothers)) || [],
+        backgroundColor: '#E6F7F7',
+        borderColor: '#63D8D8'
+      }
+    ]
+  };
+
+  // Chart options
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          display: true,
+          drawBorder: false
+        }
+      },
+      x: {
+        grid: {
+          display: false,
+          drawBorder: false
+        }
+      }
+    },
+    plugins: {
+      legend: {
+        position: 'top',
+        align: 'end'
+      }
+    }
   };
 
   return (
-    <div className={`dashboard ${darkMode ? "dark" : ""}`}>
+    <div className={`dashboard ${darkMode ? 'dark-mode' : ''}`}>
       <div className="dashboard-header">
-
-      <div className="user-info">
-          <div className="user-initials">{userInitials}</div>
+        <div className="user-info">
+          <div className="user-initials">IM</div>
           <div className="user-welcome">
-            <p>Welcome, {user.firstName} {user.lastName}</p>
+            <p>Welcome, Ivy Mitchelle</p>
           </div>
         </div>
         
-        <h1>MomCare Dashboard</h1>
+        <h1>Dashboard</h1>
         <button onClick={toggleDarkMode}>
-          {darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          {darkMode ? 'Light Mode' : 'Dark Mode'}
         </button>
       </div>
 
       <div className="dashboard-cards">
-        <div className="card">
-          <h2>Total Registered Mothers</h2>
-          <p>1,245</p>
+        <div className="dashboard-card">
+          <h3>Total Mothers</h3>
+          <p>{dashboardData.totalMothers}</p>
         </div>
-        <div className="card">
-          <h2>High-Risk Cases</h2>
-          <p>34</p>
+        <div className="dashboard-card">
+          <h3>High Risk Cases</h3>
+          <p>{dashboardData.highRiskCases}</p>
         </div>
-        <div className="card">
-          <h2>Upcoming Appointments</h2>
-          <p>78</p>
+        <div className="dashboard-card">
+          <h3>Upcoming Appointments</h3>
+          <p>{dashboardData.upcomingAppointments}</p>
         </div>
-        <div className="card">
-          <h2>CHW Performance</h2>
-          <p>View Metrics</p>
+        <div className="dashboard-card">
+          <h3>Active CHWs</h3>
+          <p>{dashboardData.activeCHWs}</p>
         </div>
       </div>
 
       <div className="dashboard-charts">
-        <div className="chart">
-          <h2>Risk Trends</h2>
-          <Line data={riskTrendData} />
+        <div className="chart-container">
+          <h3>Appointment Trends</h3>
+          <Line data={appointmentTrendsData} options={chartOptions} height={300} />
         </div>
-        <div className="chart">
-          <h2>CHW Performance</h2>
-          <Bar data={chwPerformanceData} />
+        <div className="chart-container">
+          <h3>Risk Level Changes</h3>
+          <Line data={riskChangesData} options={chartOptions} height={300} />
+        </div>
+        <div className="chart-container">
+          <h3>CHW Performance</h3>
+          <Bar data={chwPerformanceData} options={chartOptions} height={300} />
         </div>
       </div>
 
-      <div className="recent-activities">
-        <h2>Recent Activities</h2>
-        <ul>
-          <li>Jane Doe flagged as high-risk on 2024-11-19</li>
-          <li>Mary Wanjiru completed an appointment on 2024-11-18</li>
-          <li>CHW Susan added a new patient: Lucy Akinyi</li>
-        </ul>
-      </div>
-
-      <div className="notifications-widget">
-        <h2>Notifications</h2>
-        <p>2 High-risk cases require immediate attention</p>
-        <p>5 missed appointments in the past week</p>
-      </div>
-
-      <div className="dashboard-table">
-        <h2>Assigned Mothers</h2>
-        <div className="filters">
-          <input
-            type="text"
-            placeholder="Search by name"
-            value={searchQuery}
-            onChange={handleSearch}
-          />
-          <select value={riskFilter} onChange={handleRiskFilter}>
-            <option value="All">All Risks</option>
-            <option value="High">High</option>
-            <option value="Medium">Medium</option>
-            <option value="Low">Low</option>
-          </select>
+      <div className="dashboard-lists">
+        <div className="upcoming-appointments">
+          <h3>Upcoming Appointments</h3>
+          {dashboardData.upcomingAppointmentsList?.length > 0 ? (
+            <ul>
+              {dashboardData.upcomingAppointmentsList.map((appointment, index) => (
+                <li key={index}>
+                  <span className="date">{new Date(appointment.date).toLocaleDateString()}</span>
+                  <span className="name">{appointment.motherName}</span>
+                  <span className={`risk ${appointment.riskLevel?.toLowerCase()}`}>
+                    {appointment.riskLevel}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="no-data">No upcoming appointments</p>
+          )}
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Risk Status</th>
-              <th>Next Appointment</th>
-              <th>Notifications</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredMothers.map((mother, index) => (
-              <tr key={index}>
-                <td>{mother.name}</td>
-                <td className={`${mother.risk.toLowerCase()}-risk`}>{mother.risk}</td>
-                <td>{mother.appointment}</td>
-                <td>{mother.notification}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
 
-      <div className="to-do-list">
-        <h2>To-Do List for CHWs</h2>
-        <ul>
-          {toDoList.map((task) => (
-            <li key={task.id}>
-              <input
-                type="checkbox"
-                checked={task.completed}
-                onChange={() => toggleTaskCompletion(task.id)}
-              />
-              <span style={{ textDecoration: task.completed ? "line-through" : "none" }}>
-                {task.task}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <div className="recent-alerts">
+          <h3>Recent Alerts</h3>
+          {dashboardData.recentAlerts?.length > 0 ? (
+            <ul>
+              {dashboardData.recentAlerts.map((alert, index) => (
+                <li key={index} className={`alert ${alert.priority}`}>
+                  <h4>{alert.title}</h4>
+                  <p>{alert.description}</p>
+                  <span className="date">{new Date(alert.date).toLocaleDateString()}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="no-data">No recent alerts</p>
+          )}
+        </div>
       </div>
     </div>
   );

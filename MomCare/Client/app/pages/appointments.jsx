@@ -6,15 +6,15 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
-  ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { COLORS } from "../styles/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useDispatch } from "react-redux";
 import { setSelectedAppointment } from "../redux/appointmentsSlice";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import CustomSkeleton from "./customSkeleton"; // <-- Adjust path as needed
+import CustomSkeleton from "./customSkeleton";
 import { BACKEND_URL } from "@env";
 
 const Appointments = () => {
@@ -25,16 +25,21 @@ const Appointments = () => {
   const [selectedSection, setSelectedSection] = useState("upcoming");
   const [refreshing, setRefreshing] = useState(false);
 
-  // Function to fetch appointments from the backend
   const fetchAppointmentsData = useCallback(async () => {
     try {
       const token = await AsyncStorage.getItem("token");
-      const response = await axios.get(`${BACKEND_URL}/api/appointments`, {
+      const userData = await AsyncStorage.getItem("user");
+      if (!userData) throw new Error("User not found");
+      
+      const user = JSON.parse(userData);
+      const motherId = user.motherId || user.id;
+
+      const response = await axios.get(`${BACKEND_URL}/api/appointments/mother/${motherId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setAppointments(response.data.data); // Assuming response.data.data is an array
+      setAppointments(response.data.data);
     } catch (error) {
-      console.error("Error fetching appointments:", error.response?.data || error.message);
+      console.error("Error fetching appointments:", error.message);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -45,17 +50,13 @@ const Appointments = () => {
     fetchAppointmentsData();
   }, [fetchAppointmentsData]);
 
-  // Pull-to-refresh handler
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchAppointmentsData();
   }, [fetchAppointmentsData]);
 
-  // Separate upcoming and past appointments
   const upcomingAppointments = appointments.filter((item) => item.status !== "Completed");
   const pastAppointments = appointments.filter((item) => item.status === "Completed");
-
-  // Get next appointment by sorting upcoming appointments by date ascending
   const nextAppointment = [...upcomingAppointments].sort(
     (a, b) => new Date(a.date) - new Date(b.date)
   )[0];
@@ -65,153 +66,87 @@ const Appointments = () => {
     router.push("/pages/appointmentdetails");
   };
 
-  // Renders each appointment item in the FlatList
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={[
         styles.card,
-        item.status === "Confirmed"
-          ? styles.cardConfirmed
-          : item.status === "Pending"
-          ? styles.cardPending
-          : styles.cardCompleted,
+        item.status === "Confirmed" && styles.cardConfirmed,
+        item.status === "Pending" && styles.cardPending,
+        item.status === "Completed" && styles.cardCompleted,
       ]}
       onPress={() => handleAppointmentDetails(item.id)}
     >
       <View style={styles.cardContent}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.provider}>👨‍⚕️ {item.provider}</Text>
-          <Text
-            style={[
-              styles.status,
-              item.status === "Confirmed"
-                ? styles.statusConfirmed
-                : item.status === "Pending"
-                ? styles.statusPending
-                : styles.statusCompleted,
-            ]}
-          >
-            {item.status}
-          </Text>
+        <Text style={styles.provider}>{item.provider}</Text>
+        <Text style={styles.cardStatus}>{item.status}</Text>
+        <View style={styles.detailRow}>
+          <Ionicons name="document-text" size={16} color="#FF6B6B" />
+          <Text style={styles.detailText}>{item.type}</Text>
         </View>
         <View style={styles.detailRow}>
-          <Text style={styles.label}>📋 Type:</Text>
-          <Text style={styles.value}>{item.type}</Text>
+          <Ionicons name="calendar" size={16} color="#FF6B6B" />
+          <Text style={styles.detailText}>{item.date} • {item.time}</Text>
         </View>
         <View style={styles.detailRow}>
-          <Text style={styles.label}>📅 Date:</Text>
-          <Text style={styles.value}>{item.date}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.label}>⏰ Time:</Text>
-          <Text style={styles.value}>{item.time}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.label}>📍 Location:</Text>
-          <Text style={styles.value}>{item.location}</Text>
+          <Ionicons name="location" size={16} color="#FF6B6B" />
+          <Text style={styles.detailText}>{item.location}</Text>
         </View>
       </View>
     </TouchableOpacity>
   );
 
-  // *** SKELETON LOADING BLOCK *** //
   if (loading) {
     return (
-      <ScrollView
-        style={styles.skeletonScroll}
-        contentContainerStyle={styles.skeletonContainer}
-      >
-        {/* Title placeholder */}
-        <View style={styles.skeletonRow}>
-          <CustomSkeleton style={[styles.lineSkeleton, { width: '40%' }]} />
+      <LinearGradient colors={["#FFF5F7", "#F8F9FA"]} style={styles.skeletonContainer}>
+        <CustomSkeleton style={styles.skeletonTitle} />
+        <CustomSkeleton style={styles.skeletonCard} />
+        <View style={styles.skeletonToggle}>
+          <CustomSkeleton style={styles.skeletonToggleBtn} />
+          <CustomSkeleton style={styles.skeletonToggleBtn} />
         </View>
-
-        {/* Next Appointment heading */}
-        <View style={[styles.skeletonRow, { marginTop: 20 }]}>
-          <CustomSkeleton style={[styles.lineSkeleton, { width: '60%' }]} />
-        </View>
-
-        {/* Next appointment card */}
-        <View style={styles.cardSkeleton}>
-          <CustomSkeleton style={[styles.lineSkeleton, { width: '50%' }]} />
-          <CustomSkeleton style={[styles.lineSkeleton, { width: '40%', marginTop: 8 }]} />
-          <CustomSkeleton style={[styles.lineSkeleton, { width: '60%', marginTop: 8 }]} />
-          <CustomSkeleton style={[styles.lineSkeleton, { width: '50%', marginTop: 8 }]} />
-          <CustomSkeleton style={[styles.lineSkeleton, { width: '40%', marginTop: 8 }]} />
-        </View>
-
-        {/* Toggle buttons */}
-        <View style={[styles.skeletonRow, { marginTop: 30, justifyContent: 'space-between' }]}>
-          <CustomSkeleton style={styles.toggleSkeletonBtn} />
-          <CustomSkeleton style={styles.toggleSkeletonBtn} />
-        </View>
-
-        {/* 2 skeleton cards for upcoming/past appointments */}
-        <View style={styles.cardSkeleton}>
-          <CustomSkeleton style={[styles.lineSkeleton, { width: '50%' }]} />
-          <CustomSkeleton style={[styles.lineSkeleton, { width: '40%', marginTop: 8 }]} />
-          <CustomSkeleton style={[styles.lineSkeleton, { width: '60%', marginTop: 8 }]} />
-        </View>
-        <View style={styles.cardSkeleton}>
-          <CustomSkeleton style={[styles.lineSkeleton, { width: '50%' }]} />
-          <CustomSkeleton style={[styles.lineSkeleton, { width: '40%', marginTop: 8 }]} />
-          <CustomSkeleton style={[styles.lineSkeleton, { width: '60%', marginTop: 8 }]} />
-        </View>
-      </ScrollView>
+        <CustomSkeleton style={styles.skeletonCard} />
+        <CustomSkeleton style={styles.skeletonCard} />
+      </LinearGradient>
     );
   }
-  // *** END SKELETON LOADING BLOCK *** //
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Appointments</Text>
+      {/* Header */}
+      <LinearGradient colors={["#FFF5F7", "#FFE4E6"]} style={styles.header}>
+        <Ionicons name="calendar" size={32} color="#FF6B6B" />
+        <Text style={styles.headerTitle}>Mama's Dates</Text>
+        <Text style={styles.headerSubtitle}>Your care, planned with love</Text>
+      </LinearGradient>
 
-      {/* Next Appointment Section */}
+      {/* Next Appointment */}
       {nextAppointment && (
-        <View style={styles.nextAppointment}>
-          <Text style={styles.sectionHeader}>Your Next Appointment</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Next Up</Text>
           <TouchableOpacity
             style={[
               styles.card,
               styles.cardHighlighted,
-              nextAppointment.status === "Confirmed"
-                ? styles.cardConfirmed
-                : nextAppointment.status === "Pending"
-                ? styles.cardPending
-                : styles.cardCompleted,
+              nextAppointment.status === "Confirmed" && styles.cardConfirmed,
+              nextAppointment.status === "Pending" && styles.cardPending,
             ]}
             onPress={() => handleAppointmentDetails(nextAppointment.id)}
           >
-            <View style={styles.cardHeader}>
-              <Text style={styles.provider}>👨‍⚕️ {nextAppointment.provider}</Text>
-              <Text
-                style={[
-                  styles.status,
-                  nextAppointment.status === "Confirmed"
-                    ? styles.statusConfirmed
-                    : nextAppointment.status === "Pending"
-                    ? styles.statusPending
-                    : styles.statusCompleted,
-                ]}
-              >
-                {nextAppointment.status}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.label}>📋 Type:</Text>
-              <Text style={styles.value}>{nextAppointment.type}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.label}>📅 Date:</Text>
-              <Text style={styles.value}>{nextAppointment.date}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.label}>⏰ Time:</Text>
-              <Text style={styles.value}>{nextAppointment.time}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.label}>📍 Location:</Text>
-              <Text style={styles.value}>{nextAppointment.location}</Text>
+            <View style={styles.cardContent}>
+              <Text style={styles.provider}>{nextAppointment.provider}</Text>
+              <Text style={styles.cardStatus}>{nextAppointment.status}</Text>
+              <View style={styles.detailRow}>
+                <Ionicons name="document-text" size={16} color="#FF6B6B" />
+                <Text style={styles.detailText}>{nextAppointment.type}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Ionicons name="calendar" size={16} color="#FF6B6B" />
+                <Text style={styles.detailText}>{nextAppointment.date} • {nextAppointment.time}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Ionicons name="location" size={16} color="#FF6B6B" />
+                <Text style={styles.detailText}>{nextAppointment.location}</Text>
+              </View>
             </View>
           </TouchableOpacity>
         </View>
@@ -219,24 +154,22 @@ const Appointments = () => {
 
       {/* Toggle Section */}
       <View style={styles.toggleContainer}>
-        <TouchableOpacity
-          onPress={() => setSelectedSection("upcoming")}
-          style={[
-            styles.toggleButton,
-            selectedSection === "upcoming" && styles.toggleButtonActive,
-          ]}
-        >
-          <Text style={styles.toggleButtonText}>See More Upcoming Appointments</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setSelectedSection("past")}
-          style={[
-            styles.toggleButton,
-            selectedSection === "past" && styles.toggleButtonActive,
-          ]}
-        >
-          <Text style={styles.toggleButtonText}>View Past Appointments</Text>
-        </TouchableOpacity>
+        {["upcoming", "past"].map((section) => (
+          <TouchableOpacity
+            key={section}
+            style={styles.toggleButton}
+            onPress={() => setSelectedSection(section)}
+          >
+            <LinearGradient
+              colors={selectedSection === section ? ["#FF6B6B", "#FF8787"] : ["#F0F0F0", "#F8F9FA"]}
+              style={styles.toggleGradient}
+            >
+              <Text style={[styles.toggleText, selectedSection === section && styles.activeToggleText]}>
+                {section === "upcoming" ? "More Ahead" : "Looking Back"}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {/* Appointments List */}
@@ -246,166 +179,158 @@ const Appointments = () => {
         renderItem={renderItem}
         contentContainerStyle={styles.list}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[COLORS.primary]}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#FF6B6B"]} />
         }
+        ListEmptyComponent={<Text style={styles.emptyText}>No appointments here yet, mama!</Text>}
       />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  // Normal container
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    padding: 20,
+    backgroundColor: "#F8F9FA",
   },
-  title: {
+  header: {
+    padding: 24,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#FF6B6B",
+    marginTop: 8,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: "#666",
+    marginTop: 4,
+  },
+  section: {
+    paddingHorizontal: 16,
+    marginBottom: 20,
+  },
+  sectionTitle: {
     fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.textPrimary,
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  nextAppointment: {
-    marginBottom: 20,
-  },
-  sectionHeader: {
-    fontSize: 17,
-    fontWeight: "bold",
-    fontStyle: "italic",
-    color: COLORS.primary,
-    marginBottom: 15,
-    paddingBottom: 5,
+    fontWeight: "600",
+    color: "#FF6B6B",
+    marginBottom: 12,
   },
   card: {
+    backgroundColor: "#FFF",
     borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
-    backgroundColor: "#f9f9f9",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
+    padding: 16,
+    marginBottom: 12,
+    elevation: 2,
   },
   cardHighlighted: {
     borderWidth: 2,
-    borderColor: COLORS.primary,
+    borderColor: "#FF6B6B",
   },
   cardConfirmed: {
-    borderLeftWidth: 5,
-    borderLeftColor: "green",
+    backgroundColor: "#F0FFF0",
   },
   cardPending: {
-    borderLeftWidth: 5,
-    borderLeftColor: "orange",
+    backgroundColor: "#FFF5E6",
   },
   cardCompleted: {
-    borderLeftWidth: 5,
-    borderLeftColor: "#888",
+    backgroundColor: "#F5F5F5",
   },
   cardContent: {
     flexDirection: "column",
   },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
   provider: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
-    color: COLORS.textPrimary,
+    color: "#333",
+    marginBottom: 8,
+  },
+  cardStatus: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#777",
+    textTransform: "uppercase",
+    alignSelf: "flex-end",
+    position: "absolute",
+    top: 0,
+    right: 0,
   },
   detailRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 8,
   },
-  label: {
+  detailText: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
-    marginRight: 10,
-  },
-  value: {
-    fontSize: 14,
-    fontWeight: "400",
-    color: COLORS.textSecondary,
-  },
-  status: {
-    fontSize: 14,
-    fontWeight: "bold",
-    textTransform: "uppercase",
-  },
-  statusConfirmed: {
-    color: "green",
-  },
-  statusPending: {
-    color: "orange",
-  },
-  statusCompleted: {
-    color: "#888",
+    color: "#555",
+    marginLeft: 8,
+    flex: 1,
   },
   toggleContainer: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    marginVertical: 20,
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    marginBottom: 20,
   },
   toggleButton: {
-    padding: 10,
-    borderRadius: 20,
-    backgroundColor: "#f0f0f0",
+    flex: 1,
+    marginHorizontal: 4,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  toggleGradient: {
+    padding: 12,
     alignItems: "center",
-    flex: 0.45,
   },
-  toggleButtonActive: {
-    backgroundColor: COLORS.primary,
+  toggleText: {
+    fontSize: 14,
+    color: "#777",
+    fontWeight: "600",
   },
-  toggleButtonText: {
-    fontSize: 12,
-    color: COLORS.textPrimary,
-    fontWeight: "bold",
+  activeToggleText: {
+    color: "#FFF",
   },
   list: {
+    paddingHorizontal: 16,
     paddingBottom: 20,
   },
-
-  // Skeleton styles
-  skeletonScroll: {
-    backgroundColor: COLORS.background,
+  emptyText: {
+    fontSize: 16,
+    color: "#777",
+    textAlign: "center",
+    marginTop: 20,
   },
   skeletonContainer: {
-    padding: 20,
+    flex: 1,
+    padding: 16,
+    alignItems: "center",
   },
-  skeletonRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  cardSkeleton: {
-    marginTop: 10,
-    padding: 10,
-    backgroundColor: '#fff',
+  skeletonTitle: {
+    width: "40%",
+    height: 28,
     borderRadius: 8,
-    elevation: 2,
-    marginBottom: 10,
+    marginBottom: 20,
   },
-  lineSkeleton: {
-    backgroundColor: '#e0e0e0',
-    height: 18,
-    borderRadius: 4,
+  skeletonCard: {
+    width: "100%",
+    height: 120,
+    borderRadius: 12,
+    marginBottom: 12,
   },
-  toggleSkeletonBtn: {
-    width: '45%',
-    height: 35,
-    borderRadius: 20,
-    backgroundColor: '#e0e0e0',
+  skeletonToggle: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginVertical: 20,
+  },
+  skeletonToggleBtn: {
+    width: "45%",
+    height: 40,
+    borderRadius: 12,
   },
 });
 

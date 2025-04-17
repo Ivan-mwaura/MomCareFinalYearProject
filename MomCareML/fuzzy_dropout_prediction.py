@@ -173,7 +173,7 @@ def predict():
     data = request.get_json()
 
     # Debugging: Print the received data
-    print("Received data:", data)
+    #print("Received data:", data)
 
     # Extract inputs from the request
     try:
@@ -197,6 +197,7 @@ def predict():
                 risk_category = 'Low'
             else:
                 risk_category = 'High'
+
             return jsonify({"predicted_risk": risk_category, "risk_value": risk_prediction.output['Risk']})
 
         else:

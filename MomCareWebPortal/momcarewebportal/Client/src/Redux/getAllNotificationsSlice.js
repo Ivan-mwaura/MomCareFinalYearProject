@@ -9,7 +9,8 @@ export const fetchNotifications = createAsyncThunk(
     const response = await axios.get('http://localhost:5000/api/notifications', {
       headers: { Authorization: `Bearer ${token}` }
     });
-    return response.data.data;
+    // Notifications are returned as a direct array, not nested under data property
+    return Array.isArray(response.data) ? response.data : [];
   }
 );
 

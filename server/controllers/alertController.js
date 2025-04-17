@@ -1,20 +1,48 @@
 // server/controllers/alertController.js
-const { Alert, User } = require('../models');
+const { Alert, User, Mother } = require('../models');
 const { sendPushNotification } = require('../services/pushNotifications');
 
 exports.createAlert = async (req, res) => {
   try {
-    // Create the alert record in the database
-    const alert = await Alert.create(req.body);
+    const {
+      type,
+      description,
+      motherId,
+      motherName,
+      date,
+      location,
+      bloodType,
+      allergies,
+      status,
+      emergencyContacts
+    } = req.body;
 
-    // Retrieve the user's push token (assuming it's stored in the User model)
-    // Adjust the query if you store the token in a different table or field.
-    const user = await User.findByPk(req.body.motherId);
+    // Validate required fields
+    if (!motherId || !type || !description || !motherName || !date) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // Create the alert record in the database
+    const alert = await Alert.create({
+      type,
+      description,
+      patientId: motherId,
+      patientName: motherName,
+      date,
+      status: status || 'PENDING'
+    });
+
+    // Get the mother's details
+    const mother = await Mother.findByPk(motherId);
+    if (!mother) {
+      return res.status(404).json({ message: "Mother not found" });
+    }
+
+    // Get the mother's user account for push notifications
+    const user = await User.findByPk(mother.userId);
     if (user && user.pushToken) {
-      // Customize the notification content if needed
       const title = "Emergency Alert";
-      const body = `Dear ${user.firstName}, an emergency alert has been triggered. Please await assistance.`;
-      // Send push notification using Expo's push service
+      const body = `Dear ${motherName}, an emergency alert has been triggered. Help is on the way.`;
       await sendPushNotification(user.pushToken, title, body, { alertId: alert.id });
     }
 
@@ -27,7 +55,10 @@ exports.createAlert = async (req, res) => {
 
 exports.getAlerts = async (req, res) => {
   try {
-    const alerts = await Alert.findAll();
+    const alerts = await Alert.findAll({
+      order: [['createdAt', 'DESC']]
+    });
+    
     res.json({ data: alerts });
   } catch (error) {
     console.error("Error in getAlerts:", error);

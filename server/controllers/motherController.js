@@ -1,6 +1,44 @@
 // server/controllers/motherController.js
 const { Mother, CHW, User, RiskAssessment } = require('../models');
 const bcrypt = require('bcryptjs');
+const { Op } = require('sequelize');
+
+exports.searchMothers = async (req, res) => {
+  try {
+    const { search } = req.query;
+    if (!search) {
+      return res.status(400).json({ message: "Search query is required" });
+    }
+    const mothers = await Mother.findAll({
+      where: {
+        [Op.or]: [
+          { firstName: { [Op.iLike]: `%${search}%` } },
+          { lastName: { [Op.iLike]: `%${search}%` } },
+          { email: { [Op.iLike]: `%${search}%` } }
+        ]
+      },
+      include: [{
+        model: CHW,
+        as: 'chw',
+        attributes: ['firstName', 'lastName']
+      }]
+    });
+    
+    const formattedMothers = mothers.map((m) => {
+      const mData = m.toJSON();
+      mData.assignedCHW = mData.chw 
+        ? `${mData.chw.firstName} ${mData.chw.lastName}` 
+        : null;
+      delete mData.chw;
+      return mData;
+    });
+    
+    res.json({ data: formattedMothers });
+  } catch (error) {
+    console.error("Error in searchMothers:", error);
+    res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+};
 
 // Register a new Mother (creates a record in both the mothers table and the users table)
 exports.registerMother = async (req, res) => {
@@ -143,5 +181,51 @@ exports.updateProfile = async (req, res) => {
   } catch (error) {
     console.error("Error in updateProfile:", error);
     res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+};
+
+exports.updateExpoPushToken = async (req, res) => {
+  try {
+    const { expoPushToken } = req.body;
+    const motherId = req.user.motherId;
+
+    if (!motherId) {
+      return res.status(400).json({ message: 'User is not associated with a mother account' });
+    }
+
+    await Mother.update(
+      { expoPushToken },
+      { where: { id: motherId } }
+    );
+
+    res.json({ message: 'Expo push token updated successfully' });
+  } catch (error) {
+    console.error('Error updating Expo push token:', error);
+    res.status(500).json({ message: 'Error updating Expo push token', error: error.message });
+  }
+};
+
+exports.verifyExpoToken = async (req, res) => {
+  try {
+    const motherId = req.user.motherId;
+
+    if (!motherId) {
+      return res.status(400).json({ message: 'User is not associated with a mother account' });
+    }
+
+    const mother = await Mother.findByPk(motherId);
+    
+    if (!mother) {
+      return res.status(404).json({ message: 'Mother not found' });
+    }
+
+    res.json({ 
+      hasToken: !!mother.expoPushToken,
+      token: mother.expoPushToken,
+      motherName: `${mother.firstName} ${mother.lastName}`
+    });
+  } catch (error) {
+    console.error('Error verifying Expo token:', error);
+    res.status(500).json({ message: 'Error verifying Expo token', error: error.message });
   }
 };

@@ -41,6 +41,7 @@ const LoginPage = () => {
       //clear cookies
 
 
+
       // Navigate to the dashboard after successful login
       navigate("/");
     } catch (error) {

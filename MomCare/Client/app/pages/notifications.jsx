@@ -8,20 +8,17 @@ import {
   RefreshControl 
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, SIZES } from "../styles/theme";
+import { LinearGradient } from "expo-linear-gradient";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import CustomSkeleton from "./customSkeleton"; // Adjust path as needed
 import { BACKEND_URL } from "@env";
 
-// Helper function to capitalize the first letter of a string
 const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
-// Helper function to reformat appointment notifications
 const formatNotificationMessage = (message) => {
   if (message.startsWith("Appointment Notification:")) {
     const trimmed = message.replace("Appointment Notification:", "").trim();
-    // Expected format: "An appointment for Cecilia Maingi's "1st ANC Visit – Booking Visit (Before 12 Weeks)" is scheduled on 2025-03-03. Please ensure all preparations are made."
     const regex = /for\s+(.+)'s\s+"([^"]+)"\s+is scheduled on\s+(\S+)/i;
     const match = trimmed.match(regex);
     if (match && match.length >= 4) {
@@ -29,7 +26,7 @@ const formatNotificationMessage = (message) => {
       const appointmentTitle = match[2].trim();
       let appointmentDate = match[3].trim();
       appointmentDate = appointmentDate.replace(/[.,;]$/, "");
-      return `Hi ${capitalize(motherName)}, your ${appointmentTitle} is scheduled for ${appointmentDate}. Please ensure you're prepared and feel free to contact your CHW if needed.`;
+      return `${capitalize(motherName)}, your "${appointmentTitle}" is set for ${appointmentDate}. Get ready, mama!`;
     }
   }
   return message;
@@ -40,11 +37,13 @@ const Notifications = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchNotificationsData = async () => {
+  const fetchNotificationsData = useCallback(async () => {
     try {
       const token = await AsyncStorage.getItem("token");
+      if (!token) throw new Error("No token");
+
       const [notifResponse, alertsResponse] = await Promise.all([
-        axios.get( `${BACKEND_URL}/api/notifications`, {
+        axios.get(`${BACKEND_URL}/api/notifications`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
         axios.get(`${BACKEND_URL}/api/alerts`, {
@@ -52,91 +51,100 @@ const Notifications = () => {
         }),
       ]);
 
-      // Map alerts to the same format as notifications
-      const alerts = alertsResponse.data.data.map((alert) => ({
-        id: alert.id,
+      console.log("Notifications Response:", notifResponse.data);
+      console.log("Alerts Response:", alertsResponse.data);
+
+      // Handle notifications data - it's already an array
+      const notifData = Array.isArray(notifResponse.data) ? notifResponse.data.map((notif) => ({
+        id: notif.id,
+        type: notif.type || "Notification",
+        title: notif.title || "Notification",
+        message: notif.message,
+        time: notif.date || notif.createdAt,
+      })) : [];
+
+      console.log("Processed Notifications:", notifData);
+
+      // Handle alerts data - it's nested under data property
+      const alerts = Array.isArray(alertsResponse.data?.data) ? alertsResponse.data.data.map((alert) => ({
+        id: `alert-${alert.id}`,
         type: "Alert",
-        title: "Alert",
+        title: alert.type,
         message: alert.description,
-        time: alert.date, // Adjust formatting if needed
-      }));
+        time: alert.date || alert.createdAt,
+      })) : [];
 
-      // Assume notifications are already in the expected format
-      const notifData = notifResponse.data.data;
+      console.log("Processed Alerts:", alerts);
 
-      // Merge both arrays and sort newest first (by time)
-      const mergedData = [...notifData, ...alerts];
-      mergedData.sort((a, b) => new Date(b.time) - new Date(a.time));
+      const mergedData = [...notifData, ...alerts].sort(
+        (a, b) => new Date(b.time) - new Date(a.time)
+      );
+      console.log("Final Merged Data:", mergedData);
+      
       setNotifications(mergedData);
     } catch (error) {
-      console.error("Error fetching notifications and alerts:", error.response?.data || error.message);
+      console.error("Fetch error:", error);
+      console.error("Error response:", error.response?.data);
+      setNotifications([]); // Set empty array on error
     } finally {
       setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchNotificationsData();
+  }, [fetchNotificationsData]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchNotificationsData();
+  }, [fetchNotificationsData]);
+
+  const getIconName = (type) => {
+    switch (type) {
+      case "Reminder": return "calendar";
+      case "Alert": return "alert-circle";
+      case "Health Tip": return "heart";
+      default: return "notifications";
     }
   };
 
-  // Initial data fetch
-  useEffect(() => {
-    const loadData = async () => {
-      await fetchNotificationsData();
-      setLoading(false);
-    };
-    loadData();
-  }, []);
-
-  // Pull-to-refresh handler
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await fetchNotificationsData();
-    setRefreshing(false);
-  }, []);
-
-  // Map notification types to appropriate Ionicons
-  const getIconName = (type) => {
-    if (type === "Reminder") return "calendar-outline";
-    if (type === "Alert") return "alert-circle-outline";
-    if (type === "Health Tip") return "water-outline"; // Adjust if needed
-    return "notifications-outline";
-  };
-
   const renderNotification = ({ item }) => (
-    <TouchableOpacity style={styles.notification}>
-      <View style={styles.iconContainer}>
-        <Ionicons name={getIconName(item.type)} size={28} color={COLORS.primary} />
+    <TouchableOpacity style={styles.notificationCard}>
+      <View style={styles.iconWrapper}>
+        <Ionicons name={getIconName(item.type)} size={24} color="#FF6B6B" />
       </View>
-      <View style={styles.content}>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.message}>
-          {item.type === "Reminder"
-            ? formatNotificationMessage(item.message)
-            : item.message}
+      <View style={styles.notificationContent}>
+        <Text style={styles.notificationTitle}>{item.title}</Text>
+        <Text style={styles.notificationMessage}>
+          {item.type === "Reminder" ? formatNotificationMessage(item.message) : item.message}
         </Text>
-        <Text style={styles.time}>{item.time}</Text>
+        <Text style={styles.notificationTime}>{item.time}</Text>
       </View>
     </TouchableOpacity>
   );
 
-  // If loading, display custom skeleton placeholders
   if (loading) {
     return (
       <View style={styles.container}>
-        {/* Header Skeleton */}
-        <CustomSkeleton style={styles.headerSkeleton} />
-        <View style={{ height: 20 }} />
-        {/* Skeleton for 3 notification cards */}
+        <LinearGradient colors={["#FFF5F7", "#FFE4E6"]} style={styles.headerSkeletonWrapper}>
+          <CustomSkeleton style={styles.headerSkeleton} />
+        </LinearGradient>
         <FlatList
-          data={[1, 2, 3, 4, 5, 6, 7]}
+          data={[1, 2, 3, 4]}
           keyExtractor={(item) => item.toString()}
-          renderItem={({ item }) => (
+          renderItem={() => (
             <View style={styles.notificationSkeleton}>
               <CustomSkeleton style={styles.iconSkeleton} />
-              <View style={styles.textSkeletonContainer}>
-                <CustomSkeleton style={styles.lineSkeleton} />
-                <CustomSkeleton style={[styles.lineSkeleton, { width: "80%", marginTop: 6 }]} />
-                <CustomSkeleton style={[styles.lineSkeleton, { width: "60%", marginTop: 6 }]} />
+              <View style={styles.textSkeleton}>
+                <CustomSkeleton style={styles.titleSkeleton} />
+                <CustomSkeleton style={styles.messageSkeleton} />
+                <CustomSkeleton style={styles.timeSkeleton} />
               </View>
             </View>
           )}
+          contentContainerStyle={styles.skeletonList}
         />
       </View>
     );
@@ -144,20 +152,25 @@ const Notifications = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Notifications</Text>
+      <LinearGradient colors={["#FFF5F7", "#FFE4E6"]} style={styles.header}>
+        <Ionicons name="bell" size={32} color="#FF6B6B" />
+        <Text style={styles.headerTitle}>Mama's Updates</Text>
+        <Text style={styles.headerSubtitle}>Your notifications at a glance</Text>
+      </LinearGradient>
       <FlatList
         data={notifications}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id.toString()}
         renderItem={renderNotification}
         contentContainerStyle={styles.list}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[COLORS.primary]}
+            colors={["#FF6B6B"]}
           />
+        }
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>No updates yet, mama! Check back soon.</Text>
         }
       />
     </View>
@@ -167,84 +180,118 @@ const Notifications = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    paddingHorizontal: SIZES.padding,
-    paddingTop: 20,
+    backgroundColor: "#F8F9FA",
   },
   header: {
+    padding: 24,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  headerTitle: {
     fontSize: 28,
-    fontWeight: "bold",
-    color: COLORS.textPrimary,
-    marginBottom: 20,
+    fontWeight: "700",
+    color: "#FF6B6B",
+    marginTop: 12,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
   },
   list: {
+    paddingHorizontal: 16,
     paddingBottom: 20,
   },
-  notification: {
+  notificationCard: {
     flexDirection: "row",
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    elevation: 2,
     alignItems: "center",
-    paddingVertical: 15,
-    paddingHorizontal: 10,
   },
-  iconContainer: {
-    width: 50,
-    height: 50,
-    backgroundColor: COLORS.secondary,
-    borderRadius: 25,
+  iconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#FFE4E6",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 15,
+    marginRight: 12,
   },
-  content: {
+  notificationContent: {
     flex: 1,
   },
-  title: {
+  notificationTitle: {
     fontSize: 16,
-    fontWeight: "bold",
-    color: COLORS.textPrimary,
-    marginBottom: 2,
+    fontWeight: "600",
+    color: "#333",
   },
-  message: {
+  notificationMessage: {
     fontSize: 14,
-    color: COLORS.textSecondary,
-    marginBottom: 2,
+    color: "#666",
+    marginVertical: 4,
+    lineHeight: 20,
   },
-  time: {
+  notificationTime: {
     fontSize: 12,
-    color: COLORS.accent,
+    color: "#999",
   },
-  separator: {
-    height: 1,
-    backgroundColor: COLORS.secondary,
-    marginHorizontal: 10,
+  emptyText: {
+    fontSize: 16,
+    color: "#999",
+    textAlign: "center",
+    padding: 20,
   },
   // Skeleton Styles
+  headerSkeletonWrapper: {
+    padding: 24,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    alignItems: "center",
+    marginBottom: 16,
+  },
   headerSkeleton: {
-    width: "60%",
+    width: "50%",
     height: 28,
     borderRadius: 4,
-    alignSelf: "center",
+  },
+  skeletonList: {
+    paddingHorizontal: 16,
   },
   notificationSkeleton: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 15,
-    paddingHorizontal: 10,
+    marginBottom: 12,
+    padding: 16,
   },
   iconSkeleton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
-  textSkeletonContainer: {
+  textSkeleton: {
     flex: 1,
-    marginLeft: 15,
+    marginLeft: 12,
   },
-  lineSkeleton: {
-    width: "100%",
-    height: 18,
+  titleSkeleton: {
+    width: "60%",
+    height: 16,
     borderRadius: 4,
-    backgroundColor: "#e0e0e0",
+  },
+  messageSkeleton: {
+    width: "90%",
+    height: 14,
+    borderRadius: 4,
+    marginTop: 6,
+  },
+  timeSkeleton: {
+    width: "40%",
+    height: 12,
+    borderRadius: 4,
+    marginTop: 6,
   },
 });
 

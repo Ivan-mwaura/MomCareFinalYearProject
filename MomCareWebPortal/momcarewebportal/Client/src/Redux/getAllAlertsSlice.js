@@ -9,8 +9,13 @@ export const fetchAlerts = createAsyncThunk(
     const response = await axios.get('http://localhost:5000/api/alerts', {
       headers: { Authorization: `Bearer ${token}` }
     });
-    // Assuming response.data.data is the alerts array
-    return response.data.data;
+    // Make sure we handle both possible response structures
+    if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      return response.data.data;
+    } else if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
   }
 );
 

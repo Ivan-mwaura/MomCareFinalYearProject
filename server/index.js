@@ -19,16 +19,25 @@ const healthRecordRoutes = require('./routes/healthRecordRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
 const healthTipRoutes = require('./routes/healthTipRoutes');
 const predictionRoutes = require('./routes/predictionRoutes');
-
+const pushNotificationsRoutes = require('./routes/pushNotificationsRoutes');
+const appointmentRecordRoutes = require('./routes/appointmentRecordRoutes');
+const doctorRoutes = require('./routes/doctorRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 // Import error middleware
 const { errorMiddleware } = require('./middlewares/errorMiddleware');
-
 
 const app = express();
 
 // Global Middlewares
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:8081', 'http://localhost:5000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+app.use(express.urlencoded({ extended: true }));
 //app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
 
 // Mount Routes
@@ -43,6 +52,11 @@ app.use('/api/healthrecords', healthRecordRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/healthtips', healthTipRoutes);
 app.use('/api/predictions', predictionRoutes);
+app.use('/api/registerPushToken', pushNotificationsRoutes);
+app.use('/api/appointmentRecords', appointmentRecordRoutes);
+app.use('/api/doctors', doctorRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Error Handler Middleware
 app.use(errorMiddleware);

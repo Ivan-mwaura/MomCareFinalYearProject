@@ -12,6 +12,9 @@ import Support from "./Pages/Support/Support";
 import LoginPage from "./Pages/LoginPage/LoginPage";
 import PublicRoute from "./Components/PublicRoute/PublicRoute";
 import ProtectedRoute from "./Components/ProtectedRoute/ProtectedRoute";
+import HealthRecords from "./Pages/HealthRecords/HealthRecords";
+import AppointmentRecord from "./Pages/AppointmentRecord/AppointmentRecord";
+import Doctors from "./Pages/Doctors/Doctors";
 import "./main.scss";
 
 const App = () => {
@@ -47,6 +50,22 @@ const App = () => {
             }
           />
           <Route
+            path="/health-records"
+            element={
+              <ProtectedRoute>
+                <HealthRecords/>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/appointment-record"
+            element={
+              <ProtectedRoute>
+                <AppointmentRecord/>
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/alerts"
             element={
               <ProtectedRoute>
@@ -75,6 +94,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <CHWs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/doctors"
+            element={
+              <ProtectedRoute>
+                <Doctors />
               </ProtectedRoute>
             }
           />

@@ -23,7 +23,11 @@ const Mother = sequelize.define('Mother', {
   weeksPregnant: { type: DataTypes.INTEGER, allowNull: false },
   dueDate: { type: DataTypes.DATE, allowNull: false },
   // Foreign key for CHW set via associations (chwId)
-  chwId: { type: DataTypes.UUID, allowNull: true }
+  chwId: { type: DataTypes.UUID, allowNull: true },
+  expoPushToken: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
 }, {
   tableName: 'mothers',
   timestamps: true,

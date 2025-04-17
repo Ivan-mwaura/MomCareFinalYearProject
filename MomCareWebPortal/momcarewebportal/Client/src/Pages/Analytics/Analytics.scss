@@ -13,6 +13,23 @@
     text-align: center;
   }
 
+  .date-filter {
+    display: flex;
+    gap: vars.$padding;
+    margin-bottom: vars.$padding;
+    justify-content: center;
+    align-items: center;
+
+    input {
+      padding: 10px;
+      border-radius: vars.$border-radius;
+      border: 1px solid vars.$accent;
+      background-color: vars.$background;
+      color: vars.$text-secondary;
+      font-size: 14px;
+    }
+  }
+
   .dashboard {
     margin-bottom: vars.$padding;
 
@@ -106,12 +123,18 @@
       p {
         color: vars.$text-secondary;
         font-size: 14px;
+        margin-bottom: 5px;
       }
     }
   }
 
   @include mobile {
     padding: math.div(vars.$padding, 2);
+
+    .date-filter {
+      flex-direction: column;
+      gap: 10px;
+    }
 
     .dashboard .charts {
       flex-direction: column;

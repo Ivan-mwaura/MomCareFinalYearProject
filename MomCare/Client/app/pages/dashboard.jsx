@@ -3,23 +3,19 @@ import {
   View,
   Text,
   Image,
-  TextInput,
   TouchableOpacity,
   Animated,
-  Modal,
   StyleSheet,
-  FlatList,
   ScrollView,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
-import CustomSkeleton from './customSkeleton'; // Adjust the path as needed
-import { COLORS, SIZES } from '../styles/theme';
-import axios from 'axios';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons'; // Add more icons as needed
-import { BACKEND_URL } from '@env';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient'; // For gradient backgrounds
+import { BACKEND_URL } from '@env';
+import axios from 'axios';
 
 const Dashboard = () => {
   const [user, setUser] = useState(null);
@@ -27,48 +23,23 @@ const Dashboard = () => {
   const [healthTips, setHealthTips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const router = useRouter();
-
-  const [mood, setMood] = useState('');
-  const [symptom, setSymptom] = useState('');
-  const [stressTip, setStressTip] = useState('');
-  const [modalVisible, setModalVisible] = useState(false);
   const [animationValue] = useState(new Animated.Value(0));
-
-  useEffect(() => {
-    const checkToken = async () => {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
-    };
-    checkToken();
-  }, []);
+  const router = useRouter();
 
   const weeklyDevelopment = {
     week: 24,
-    size: 'Baby is the size of a cantaloupe',
+    size: 'about the size of a cantaloupe',
     highlights: [
-      "Baby's lungs are forming air sacs.",
-      'Skin is becoming less translucent.',
-      'Hearing ability is improving daily.',
+      "Lungs are blooming with air sacs.",
+      "Skin is softening up nicely.",
+      "Ears are catching your lullabies.",
     ],
   };
-
-  const stressTips = [
-    'Take a deep breath and count to 10 slowly.',
-    'Engage in light yoga or stretching exercises.',
-    'Listen to calming music for 10 minutes.',
-  ];
 
   const fetchData = useCallback(async () => {
     try {
       const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
+      if (!token) throw new Error('No token found');
 
       const userRes = await axios.get(`${BACKEND_URL}/api/users/profile`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -78,451 +49,380 @@ const Dashboard = () => {
       const appRes = await axios.get(`${BACKEND_URL}/api/appointments`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      // Sort appointments by date and take the first 2
       const sortedAppointments = appRes.data.data
         .sort((a, b) => new Date(a.date) - new Date(b.date))
         .slice(0, 2);
       setAppointments(sortedAppointments);
 
-      const tipsRes = await axios.get(`${BACKEND_URL}/api/healthtips`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setHealthTips(tipsRes.data.data);
+      setHealthTips([
+        {
+          id: 1,
+          category: 'Nutrition',
+          text: 'Add leafy greens for iron',
+          date: '2 days ago',
+          image: 'https://images.unsplash.com/photo-1576866209830-589e1bfbaa4d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80',
+        },
+        {
+          id: 2,
+          category: 'Relax',
+          text: 'Prenatal yoga eases stress',
+          date: '4 days ago',
+          image: 'https://images.unsplash.com/photo-1593811167562-9cef47bfc4d7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1974&q=80',
+        },
+      ]);
     } catch (error) {
-      console.error('Error fetching dashboard data:', error.response?.data || error.message);
-      if (error.response?.status === 401) {
+      console.error('Dashboard fetch error:', error.message);
+      if (error.message === 'No token found' || error.response?.status === 401) {
         router.push('/auth/login');
       }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
-
-  const handleAnimation = () => {
     Animated.timing(animationValue, {
       toValue: 1,
-      duration: 1000,
-      useNativeDriver: false,
+      duration: 800,
+      useNativeDriver: true,
     }).start();
-  };
+  }, [fetchData]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchData();
   }, [fetchData]);
 
-  const sectionsData = [
-    { type: 'welcome' },
-    { type: 'tracker' },
-    { type: 'appointments' },
-    { type: 'weeklyDevelopment' },
-    { type: 'symptomChecker' },
-    { type: 'moodTracker' },
-    { type: 'meditation' },
-    { type: 'tips' },
-  ];
-
-  const renderSection = ({ item }) => {
-    switch (item.type) {
-      case 'welcome':
-        return (
-          <View style={styles.welcomeSection}>
-            <Text style={styles.welcomeText}>
-              Welcome, {user ? `${user.firstName} ${user.lastName}` : 'User'} 👋
-            </Text>
-            <Text style={styles.subtitle}>Here’s an overview of your journey:</Text>
-          </View>
-        );
-
-      case 'tracker':
-        return (
-          <LinearGradient
-            colors={['#FF9A9E', '#FAD0C4']}
-            style={styles.trackerCard}
-          >
-            <Text style={styles.trackerTitle}>Pregnancy Stage Tracker</Text>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: '60%' }]} />
-            </View>
-            <Text style={styles.trackerText}>2nd Trimester (24 Weeks)</Text>
-          </LinearGradient>
-        );
-
-      case 'appointments':
-        return (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
-            {appointments.length === 0 ? (
-              <Text style={styles.text}>No appointments scheduled.</Text>
-            ) : (
-              appointments.map((appointment) => (
-                <TouchableOpacity
-                  key={appointment.id}
-                  style={styles.appointmentCard}
-                >
-                  <Ionicons name="calendar" size={24} color={COLORS.primary} />
-                  <View style={styles.appointmentDetails}>
-                    <Text style={styles.appointmentTitle}>{appointment.type}</Text>
-                    <Text style={styles.appointmentTime}>
-                      {appointment.date} at {appointment.time}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))
-            )}
-          </View>
-        );
-
-      case 'weeklyDevelopment':
-        handleAnimation();
-        return (
-          <Animated.View
-            style={[
-              styles.section,
-              {
-                opacity: animationValue,
-                transform: [
-                  {
-                    translateY: animationValue.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [50, 0],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          >
-            <Text style={styles.sectionTitle}>Weekly Development Updates</Text>
-            <Text style={styles.text}>{weeklyDevelopment.size}</Text>
-            {weeklyDevelopment.highlights.map((highlight, index) => (
-              <View key={index} style={styles.bulletPoint}>
-                <Ionicons name="ellipse" size={8} color={COLORS.primary} />
-                <Text style={styles.bulletText}>{highlight}</Text>
-              </View>
-            ))}
-          </Animated.View>
-        );
-
-      case 'symptomChecker':
-        return (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Symptom Checker</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter a symptom (e.g., nausea)"
-              value={symptom}
-              onChangeText={setSymptom}
-            />
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => alert(`Consult a doctor if ${symptom} persists.`)}
-            >
-              <Text style={styles.buttonText}>Check Symptom</Text>
-            </TouchableOpacity>
-          </View>
-        );
-
-      case 'moodTracker':
-        return (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Mood Tracker</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="How are you feeling today?"
-              value={mood}
-              onChangeText={setMood}
-            />
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() =>
-                setStressTip(stressTips[Math.floor(Math.random() * stressTips.length)])
-              }
-            >
-              <Text style={styles.buttonText}>Track Mood</Text>
-            </TouchableOpacity>
-            {stressTip && <Text style={styles.text}>Suggestion: {stressTip}</Text>}
-          </View>
-        );
-
-      case 'meditation':
-        return (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Meditation and Relaxation</Text>
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => setModalVisible(true)}
-            >
-              <Text style={styles.buttonText}>Start Meditation</Text>
-            </TouchableOpacity>
-            <Modal
-              visible={modalVisible}
-              transparent={true}
-              animationType="slide"
-              onRequestClose={() => setModalVisible(false)}
-            >
-              <View style={styles.modalContainer}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Relaxation Exercises</Text>
-                  <Text style={styles.modalText}>
-                    1. Sit comfortably and close your eyes.
-                  </Text>
-                  <Text style={styles.modalText}>
-                    2. Breathe in for 4 seconds, hold for 4 seconds, then exhale slowly.
-                  </Text>
-                  <Text style={styles.modalText}>3. Repeat for 5 minutes.</Text>
-                  <TouchableOpacity
-                    style={styles.button}
-                    onPress={() => setModalVisible(false)}
-                  >
-                    <Text style={styles.buttonText}>Close</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </Modal>
-          </View>
-        );
-
-      case 'tips':
-        return (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Health Tips</Text>
-            {healthTips.length === 0 ? (
-              <Text style={styles.text}>No health tips available.</Text>
-            ) : (
-              healthTips.map((tip) => (
-                <TouchableOpacity key={tip.id} style={styles.tipCard}>
-                  <Image source={{ uri: tip.image }} style={styles.tipImage} />
-                  <View style={styles.tipContent}>
-                    <Text style={styles.tipCategory}>{tip.category}</Text>
-                    <Text style={styles.tipTitle}>{tip.text}</Text>
-                    <Text style={styles.tipDate}>{tip.date}</Text>
-                  </View>
-                </TouchableOpacity>
-              ))
-            )}
-          </View>
-        );
-
-      default:
-        return null;
-    }
-  };
-
   if (loading) {
     return (
-      <ScrollView style={styles.loadingScroll}>
-        <View style={styles.loadingContainer}>
-          {/* Skeleton Loading Placeholders */}
-          <CustomSkeleton style={[styles.lineSkeleton, { width: '70%' }]} />
-          <CustomSkeleton style={[styles.lineSkeleton, { width: '50%', marginTop: 6 }]} />
-          <CustomSkeleton style={[styles.lineSkeleton, { width: '60%', marginTop: 30 }]} />
-          <CustomSkeleton style={[styles.lineSkeleton, { width: '90%', height: 10, marginTop: 10 }]} />
-          <CustomSkeleton style={[styles.lineSkeleton, { width: '40%', marginTop: 8 }]} />
-        </View>
-      </ScrollView>
+      <LinearGradient colors={['#FFF5F7', '#F8F9FA']} style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FF6B6B" />
+        <Text style={styles.loadingText}>Preparing your mama space...</Text>
+      </LinearGradient>
     );
   }
 
   return (
-    <FlatList
-      data={sectionsData}
-      keyExtractor={(item, index) => `${item.type}-${index}`}
-      renderItem={renderSection}
-      contentContainerStyle={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />
-      }
-    />
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF6B6B" />}
+    >
+      {/* Header */}
+      <LinearGradient colors={['#FFF5F7', '#FFE4E6']} style={styles.header}>
+        <Animated.View
+          style={{
+            opacity: animationValue,
+            transform: [{ translateY: animationValue.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }],
+          }}
+        >
+          <Text style={styles.headerTitle}>Welcome, {user ? user.firstName : 'Mama'}! 🌷</Text>
+          <Text style={styles.headerSubtitle}>A peek at your blossoming journey</Text>
+        </Animated.View>
+      </LinearGradient>
+
+      {/* Baby Growth Card */}
+      <Animated.View
+        style={[
+          styles.card,
+          { transform: [{ translateY: animationValue.interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) }] },
+        ]}
+      >
+        <LinearGradient colors={['#FF6B6B', '#FF8787']} style={styles.gradientCard}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="flower" size={28} color="#FFF" />
+            <Text style={styles.cardTitle}>Baby’s Bloom</Text>
+          </View>
+          <Text style={styles.babyWeek}>Week {weeklyDevelopment.week}</Text>
+          <Text style={styles.babySize}>Your little one is {weeklyDevelopment.size}</Text>
+        </LinearGradient>
+      </Animated.View>
+
+      {/* Quick Actions */}
+      <Animated.View
+        style={[
+          styles.section,
+          { transform: [{ translateY: animationValue.interpolate({ inputRange: [0, 1], outputRange: [50, 0] }) }] },
+        ]}
+      >
+        <Text style={styles.sectionTitle}>Quick Mama Moves</Text>
+        <View style={styles.actionsRow}>
+          <TouchableOpacity style={styles.actionButton}>
+            <Ionicons name="calendar" size={24} color="#FF6B6B" />
+            <Text style={styles.actionText}>Book Visit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton}>
+            <Ionicons name="chatbubble" size={24} color="#FF6B6B" />
+            <Text style={styles.actionText}>Chat CHW</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton}>
+            <Ionicons name="heart" size={24} color="#FF6B6B" />
+            <Text style={styles.actionText}>Track Health</Text>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+
+      {/* Upcoming Appointments */}
+      <Animated.View
+        style={[
+          styles.section,
+          { transform: [{ translateY: animationValue.interpolate({ inputRange: [0, 1], outputRange: [60, 0] }) }] },
+        ]}
+      >
+        <Text style={styles.sectionTitle}>Next Check-Ins</Text>
+        {appointments.length === 0 ? (
+          <Text style={styles.emptyText}>No visits scheduled yet!</Text>
+        ) : (
+          appointments.map((appointment) => (
+            <View key={appointment.id} style={styles.card}>
+              <Ionicons name="calendar" size={20} color="#FF6B6B" style={styles.cardIcon} />
+              <View style={styles.cardContent}>
+                <Text style={styles.cardText}>{appointment.type}</Text>
+                <Text style={styles.cardSubtext}>{appointment.date} • {appointment.time}</Text>
+              </View>
+            </View>
+          ))
+        )}
+      </Animated.View>
+
+      {/* Weekly Highlights */}
+      <Animated.View
+        style={[
+          styles.section,
+          { transform: [{ translateY: animationValue.interpolate({ inputRange: [0, 1], outputRange: [70, 0] }) }] },
+        ]}
+      >
+        <Text style={styles.sectionTitle}>This Week’s Magic</Text>
+        <View style={styles.card}>
+          {weeklyDevelopment.highlights.map((highlight, index) => (
+            <View key={index} style={styles.highlightRow}>
+              <Ionicons name="sparkles" size={18} color="#FF6B6B" />
+              <Text style={styles.highlightText}>{highlight}</Text>
+            </View>
+          ))}
+        </View>
+      </Animated.View>
+
+      {/* Health Tips */}
+      <Animated.View
+        style={[
+          styles.section,
+          { transform: [{ translateY: animationValue.interpolate({ inputRange: [0, 1], outputRange: [80, 0] }) }] },
+        ]}
+      >
+        <Text style={styles.sectionTitle}>Mama Wisdom</Text>
+        {healthTips.map((tip) => (
+          <View key={tip.id} style={styles.tipCard}>
+            <Image source={{ uri: tip.image }} style={styles.tipImage} />
+            <View style={styles.tipContent}>
+              <Text style={styles.tipCategory}>{tip.category}</Text>
+              <Text style={styles.tipText}>{tip.text}</Text>
+              <Text style={styles.tipDate}>{tip.date}</Text>
+            </View>
+          </View>
+        ))}
+      </Animated.View>
+
+      {/* Refresh Button */}
+      <Animated.View
+        style={{
+          transform: [{ translateY: animationValue.interpolate({ inputRange: [0, 1], outputRange: [90, 0] }) }],
+        }}
+      >
+        <TouchableOpacity style={styles.refreshButton} onPress={onRefresh}>
+          <LinearGradient colors={['#FF6B6B', '#FF8787']} style={styles.refreshGradient}>
+            <Ionicons name="refresh" size={20} color="#FFF" style={styles.refreshIcon} />
+            <Text style={styles.refreshText}>Refresh Journey</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </Animated.View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
-    paddingHorizontal: SIZES.padding,
-    backgroundColor: COLORS.background,
+    flex: 1,
+    backgroundColor: '#F8F9FA',
   },
-  welcomeSection: {
-    marginBottom: 20,
+  contentContainer: {
+    padding: 16,
   },
-  welcomeText: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: COLORS.textPrimary,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  subtitle: {
+  loadingText: {
+    marginTop: 12,
     fontSize: 16,
-    color: COLORS.textSecondary,
-    marginTop: 5,
+    color: '#FF6B6B',
+    fontWeight: '500',
   },
-  trackerCard: {
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 5,
+  header: {
+    paddingVertical: 28,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    alignItems: 'center',
   },
-  trackerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 10,
+  headerTitle: {
+    fontSize: 30,
+    fontWeight: '700',
+    color: '#FF6B6B',
   },
-  progressBar: {
-    height: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderRadius: 5,
-    overflow: 'hidden',
-    marginBottom: 10,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#fff',
-  },
-  trackerText: {
-    fontSize: 14,
-    color: '#fff',
+  headerSubtitle: {
+    fontSize: 16,
+    color: '#777',
+    marginTop: 6,
   },
   section: {
     marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.primary,
-    marginBottom: 10,
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#FF6B6B',
+    marginBottom: 12,
   },
-  appointmentCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+  card: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
     elevation: 3,
   },
-  appointmentDetails: {
-    marginLeft: 10,
+  gradientCard: {
+    borderRadius: 16,
+    padding: 20,
   },
-  appointmentTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.textPrimary,
-  },
-  appointmentTime: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-  },
-  bulletPoint: {
+  cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 5,
+    marginBottom: 12,
   },
-  bulletText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginLeft: 10,
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#FFF',
+    marginLeft: 8,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.secondary,
-    borderRadius: 10,
-    padding: 10,
-    fontSize: 14,
-    color: COLORS.textPrimary,
-    marginBottom: 10,
-  },
-  button: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 10,
-    padding: 15,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  buttonText: {
-    color: COLORS.background,
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    width: '80%',
-    backgroundColor: COLORS.background,
-    borderRadius: 15,
-    padding: 20,
-    alignItems: 'center',
-  },
-  modalTitle: {
+  babyWeek: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.primary,
-    marginBottom: 10,
+    color: '#FFF',
+    fontWeight: '500',
   },
-  modalText: {
+  babySize: {
+    fontSize: 16,
+    color: '#FFF',
+    marginTop: 6,
+    opacity: 0.9,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  actionButton: {
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    flex: 1,
+    marginHorizontal: 4,
+    elevation: 2,
+  },
+  actionText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: '#FF6B6B',
+    marginTop: 6,
+    fontWeight: '500',
+  },
+  cardIcon: {
+    marginRight: 12,
+  },
+  cardContent: {
+    flex: 1,
+  },
+  cardText: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '600',
+  },
+  cardSubtext: {
+    fontSize: 14,
+    color: '#777',
+    marginTop: 4,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#999',
     textAlign: 'center',
-    marginVertical: 5,
+    paddingVertical: 8,
+  },
+  highlightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  highlightText: {
+    fontSize: 14,
+    color: '#555',
+    marginLeft: 10,
+    flex: 1,
+    lineHeight: 20,
   },
   tipCard: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 12,
     elevation: 3,
   },
   tipImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
-    marginRight: 10,
+    width: 64,
+    height: 64,
+    borderRadius: 12,
+    marginRight: 12,
   },
   tipContent: {
     flex: 1,
-    justifyContent: 'center',
   },
   tipCategory: {
     fontSize: 12,
-    color: COLORS.accent,
-    fontWeight: 'bold',
-    marginBottom: 5,
+    fontWeight: '600',
+    color: '#FF6B6B',
+    textTransform: 'uppercase',
   },
-  tipTitle: {
-    fontSize: 14,
-    color: COLORS.textPrimary,
-    fontWeight: 'bold',
-    marginBottom: 5,
+  tipText: {
+    fontSize: 15,
+    color: '#333',
+    marginVertical: 4,
   },
   tipDate: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: '#999',
   },
-  text: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginVertical: 5,
+  refreshButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
+  refreshGradient: {
+    flexDirection: 'row',
+    padding: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  refreshIcon: {
+    marginRight: 8,
+  },
+  refreshText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFF',
   },
 });
 

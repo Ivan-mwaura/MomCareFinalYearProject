@@ -21,6 +21,15 @@ const Alerts = () => {
     dispatch(fetchNotifications());
   }, [dispatch]);
 
+  // Add logging to help debug
+  useEffect(() => {
+    console.log("Alerts data:", alerts);
+  }, [alerts]);
+
+  useEffect(() => {
+    console.log("Notifications data:", notifications);
+  }, [notifications]);
+
   const alertsPerPage = 10;
   const totalPages = Math.ceil(alerts.length / alertsPerPage);
 

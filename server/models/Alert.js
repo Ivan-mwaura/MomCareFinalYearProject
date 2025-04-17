@@ -9,6 +9,7 @@ const Alert = sequelize.define('Alert', {
   },
   type: { type: DataTypes.STRING, allowNull: false },
   description: { type: DataTypes.STRING, allowNull: false },
+  status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'PENDING' },
   patientId: { type: DataTypes.UUID, allowNull: false }, // References Mother
   patientName: { type: DataTypes.STRING, allowNull: false },
   date: { type: DataTypes.DATEONLY, allowNull: false }

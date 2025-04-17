@@ -1,9 +1,28 @@
 // server/controllers/appointmentController.js
 const { Appointment, Mother } = require('../models');
+const { sendAppointmentEmail } = require('../services/emailService');
 
 exports.createAppointment = async (req, res) => {
   try {
     const appointment = await Appointment.create(req.body);
+    
+    // Get mother's email
+    const mother = await Mother.findByPk(req.body.motherId);
+    if (mother && mother.email) {
+      try {
+        await sendAppointmentEmail(mother.email, {
+          date: appointment.date,
+          time: appointment.time,
+          location: appointment.location,
+          provider: appointment.provider,
+          type: appointment.type
+        });
+      } catch (emailError) {
+        console.error("Error sending email notification:", emailError);
+        // Don't fail the appointment creation if email fails
+      }
+    }
+
     res.status(201).json({ appointment });
   } catch (error) {
     console.error("Error in createAppointment:", error);

@@ -9,9 +9,9 @@ import {
   Switch,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { COLORS, SIZES } from "../styles/theme";
 import CustomSkeleton from "./customSkeleton";
 import { useRouter } from "expo-router";
 import { BACKEND_URL } from "@env";
@@ -24,7 +24,6 @@ const PersonalizationAndAccount = () => {
   const [privacySettings, setPrivacySettings] = useState("Public");
   const [language, setLanguage] = useState("English");
 
-  // Local state fields for profile details
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [email, setEmail] = useState("");
@@ -35,75 +34,47 @@ const PersonalizationAndAccount = () => {
   useEffect(() => {
     const checkToken = async () => {
       const token = await AsyncStorage.getItem("token");
-  
       if (!token) {
         router.push("/auth/login");
         return;
       }
+      fetchProfile(token);
     };
-  
     checkToken();
-  }, []); 
+  }, [router]);
 
-  // Fetch profile data from the backend when component mounts
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
+  const fetchProfile = async (token) => {
+    try {
+      const response = await axios.get(`${BACKEND_URL}/api/users/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const user = response.data.user;
+      setProfile(user);
+      setName(`${user.firstName} ${user.lastName}`);
+      setContact(user.phone);
+      setEmail(user.email);
+      setLocation(user.location || "Not set");
+      setEmergencyContact(user.emergencyContact || "Not set");
+    } catch (error) {
+      console.error("Error fetching profile:", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-
-        //console.log("Token:", token);
-
-        //console.log("backend url", BACKEND_URL);
-        const response = await axios.get(
-          `${BACKEND_URL}/api/users/profile`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const user = response.data.user;
-        setProfile(user);
-        setName(`${user.firstName} ${user.lastName}`);
-        setContact(user.phone);
-        setEmail(user.email);
-        setLocation(user.location);
-        setEmergencyContact(user.emergencyContact || "");
-      } catch (error) {
-        console.error("Error fetching profile:", error.response?.data || error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, []);
-
-  // Update local fields on change
   const handleProfileUpdate = (key, value) => {
-    if (key === "name") setName(value);
-    if (key === "contact") setContact(value);
-    if (key === "email") setEmail(value);
-    if (key === "location") setLocation(value);
-    if (key === "emergencyContact") setEmergencyContact(value);
+    switch (key) {
+      case "name": setName(value); break;
+      case "contact": setContact(value); break;
+      case "email": setEmail(value); break;
+      case "location": setLocation(value); break;
+      case "emergencyContact": setEmergencyContact(value); break;
+    }
   };
 
-  const handleLogout = () => {
-    console.log("User logged out");
-    // Optionally, clear AsyncStorage and redirect to login here.
-
-    // For now, just clear AsyncStorage
-    AsyncStorage.removeItem("token");
-
-    // Redirect to login
-    router.push("/auth/login");
-  };
-
-  const toggleEditMode = () => {
-    setIsEditing((prev) => !prev);
-  };
-
-  // Save the updated profile to the backend
   const handleSaveProfile = async () => {
     try {
       const token = await AsyncStorage.getItem("token");
-      // Assume name is "FirstName LastName"
       const [firstName, ...lastNameArr] = name.split(" ");
       const lastName = lastNameArr.join(" ") || "";
       const updatedData = {
@@ -115,238 +86,258 @@ const PersonalizationAndAccount = () => {
         emergencyContact,
       };
       const response = await axios.put(
-        "http://192.168.0.106:5000/api/users/profile",
+        `${BACKEND_URL}/api/users/profile`,
         updatedData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setProfile(response.data.user);
       setIsEditing(false);
-      alert("Profile updated successfully");
+      alert("Profile updated, mama!");
     } catch (error) {
-      console.error("Error updating profile:", error.response?.data || error.message);
-      alert("Failed to update profile");
+      console.error("Error updating profile:", error.message);
+      alert("Oops! Something went wrong. Try again.");
     }
   };
 
-  // Show skeleton loader while loading data
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem("token");
+    router.push("/auth/login");
+  };
+
   if (loading || !profile) {
     return (
-      <ScrollView contentContainerStyle={styles.loadingContainer}>
+      <LinearGradient colors={["#FFF5F7", "#F8F9FA"]} style={styles.loadingContainer}>
         <CustomSkeleton style={styles.headerSkeleton} />
-        <CustomSkeleton style={[styles.lineSkeleton, { width: "80%", marginTop: 10 }]} />
-        <CustomSkeleton style={[styles.lineSkeleton, { width: "60%", marginTop: 10 }]} />
-      </ScrollView>
+        <CustomSkeleton style={styles.fieldSkeleton} />
+        <CustomSkeleton style={styles.fieldSkeleton} />
+        <CustomSkeleton style={styles.fieldSkeleton} />
+      </LinearGradient>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      {/* My Profile Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>My Profile</Text>
-        <View style={styles.profileCard}>
-          <Ionicons
-            name="person-circle-outline"
-            size={80}
-            color={COLORS.primary}
-            style={styles.profileIcon}
-          />
-          <View style={styles.profileDetails}>
-            <View style={styles.editHeader}>
-              <Text style={styles.label}>Profile Details</Text>
-              <TouchableOpacity
-                onPress={isEditing ? handleSaveProfile : toggleEditMode}
-                style={styles.editButton}
-              >
-                <Ionicons
-                  name={isEditing ? "checkmark-outline" : "pencil-outline"}
-                  size={20}
-                  color={COLORS.background}
-                />
-                <Text style={styles.editButtonText}>
-                  {isEditing ? "Save" : "Edit"}
-                </Text>
-              </TouchableOpacity>
-            </View>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      {/* Header */}
+      <LinearGradient colors={["#FFF5F7", "#FFE4E6"]} style={styles.header}>
+        <Ionicons name="person" size={32} color="#FF6B6B" />
+        <Text style={styles.headerTitle}>Mama’s Space</Text>
+        <Text style={styles.headerSubtitle}>Make it yours</Text>
+      </LinearGradient>
 
-            <Text style={styles.label}>Name</Text>
-            <TextInput
-              style={[styles.input, !isEditing && styles.inputDisabled]}
-              value={name}
-              onChangeText={(value) => handleProfileUpdate("name", value)}
-              editable={isEditing}
-            />
-            <Text style={styles.label}>Contact</Text>
-            <TextInput
-              style={[styles.input, !isEditing && styles.inputDisabled]}
-              value={contact}
-              onChangeText={(value) => handleProfileUpdate("contact", value)}
-              editable={isEditing}
-            />
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={[styles.input, !isEditing && styles.inputDisabled]}
-              value={email}
-              onChangeText={(value) => handleProfileUpdate("email", value)}
-              editable={isEditing}
-            />
-            <Text style={styles.label}>Location</Text>
-            <TextInput
-              style={[styles.input, !isEditing && styles.inputDisabled]}
-              value={location}
-              onChangeText={(value) => handleProfileUpdate("location", value)}
-              editable={isEditing}
-            />
-            <Text style={styles.label}>Emergency Contact</Text>
-            <TextInput
-              style={[styles.input, !isEditing && styles.inputDisabled]}
-              value={emergencyContact}
-              onChangeText={(value) => handleProfileUpdate("emergencyContact", value)}
-              editable={isEditing}
-            />
-          </View>
+      {/* Profile Section */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>My Details</Text>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={isEditing ? handleSaveProfile : () => setIsEditing(true)}
+          >
+            <LinearGradient colors={["#FF6B6B", "#FF8787"]} style={styles.editGradient}>
+              <Ionicons
+                name={isEditing ? "checkmark" : "pencil"}
+                size={18}
+                color="#FFF"
+                style={styles.editIcon}
+              />
+              <Text style={styles.editText}>{isEditing ? "Save" : "Edit"}</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.profileCard}>
+          <ProfileField label="Name" value={name} onChange={handleProfileUpdate} keyName="name" editable={isEditing} />
+          <ProfileField label="Phone" value={contact} onChange={handleProfileUpdate} keyName="contact" editable={isEditing} />
+          <ProfileField label="Email" value={email} onChange={handleProfileUpdate} keyName="email" editable={isEditing} />
+          <ProfileField label="Location" value={location} onChange={handleProfileUpdate} keyName="location" editable={isEditing} />
+          <ProfileField label="Emergency Contact" value={emergencyContact} onChange={handleProfileUpdate} keyName="emergencyContact" editable={isEditing} />
         </View>
       </View>
 
       {/* Settings Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Settings</Text>
-        <View style={styles.settingsOption}>
-          <Text style={styles.settingsLabel}>Notifications</Text>
-          <Switch
+        <Text style={styles.sectionTitle}>My Preferences</Text>
+        <View style={styles.settingsCard}>
+          <SettingOption
+            label="Notifications"
             value={notificationEnabled}
-            onValueChange={setNotificationEnabled}
-            trackColor={{ false: COLORS.secondary, true: COLORS.primary }}
-            thumbColor={notificationEnabled ? COLORS.background : COLORS.secondary}
+            onChange={setNotificationEnabled}
+            type="switch"
+          />
+          <SettingOption
+            label="Privacy"
+            value={privacySettings}
+            onPress={() => setPrivacySettings(privacySettings === "Public" ? "Private" : "Public")}
+            type="dropdown"
+          />
+          <SettingOption
+            label="Language"
+            value={language}
+            onPress={() => setLanguage(language === "English" ? "Swahili" : "English")}
+            type="dropdown"
           />
         </View>
-        <View style={styles.settingsOption}>
-          <Text style={styles.settingsLabel}>Privacy Settings</Text>
-          <TouchableOpacity
-            style={styles.dropdown}
-            onPress={() =>
-              setPrivacySettings(privacySettings === "Public" ? "Private" : "Public")
-            }
-          >
-            <Text style={styles.dropdownText}>{privacySettings}</Text>
-            <Ionicons name="chevron-down-outline" size={20} color={COLORS.textSecondary} />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.settingsOption}>
-          <Text style={styles.settingsLabel}>Language</Text>
-          <TouchableOpacity
-            style={styles.dropdown}
-            onPress={() => setLanguage(language === "English" ? "Swahili" : "English")}
-          >
-            <Text style={styles.dropdownText}>{language}</Text>
-            <Ionicons name="chevron-down-outline" size={20} color={COLORS.textSecondary} />
-          </TouchableOpacity>
-        </View>
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={24} color={COLORS.background} />
-          <Text style={styles.logoutText}>Logout</Text>
+          <LinearGradient colors={["#FF6B6B", "#FF8787"]} style={styles.logoutGradient}>
+            <Ionicons name="log-out" size={20} color="#FFF" style={styles.logoutIcon} />
+            <Text style={styles.logoutText}>Log Out</Text>
+          </LinearGradient>
         </TouchableOpacity>
       </View>
     </ScrollView>
   );
 };
 
+const ProfileField = ({ label, value, onChange, keyName, editable }) => (
+  <View style={styles.fieldContainer}>
+    <Text style={styles.fieldLabel}>{label}</Text>
+    <TextInput
+      style={[styles.fieldInput, !editable && styles.fieldInputDisabled]}
+      value={value}
+      onChangeText={(text) => onChange(keyName, text)}
+      editable={editable}
+      placeholder={`Enter ${label.toLowerCase()}`}
+      placeholderTextColor="#999"
+    />
+  </View>
+);
+
+const SettingOption = ({ label, value, onChange, onPress, type }) => (
+  <View style={styles.settingOption}>
+    <Text style={styles.settingLabel}>{label}</Text>
+    {type === "switch" ? (
+      <Switch
+        value={value}
+        onValueChange={onChange}
+        trackColor={{ false: "#DDD", true: "#FF6B6B" }}
+        thumbColor={value ? "#FFF" : "#F0F0F0"}
+      />
+    ) : (
+      <TouchableOpacity style={styles.dropdown} onPress={onPress}>
+        <Text style={styles.dropdownText}>{value}</Text>
+        <Ionicons name="chevron-down" size={18} color="#FF6B6B" />
+      </TouchableOpacity>
+    )}
+  </View>
+);
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    padding: SIZES.padding,
+    backgroundColor: "#F8F9FA",
+  },
+  contentContainer: {
+    padding: 16,
   },
   loadingContainer: {
-    flexGrow: 1,
-    backgroundColor: COLORS.background,
-    padding: SIZES.padding,
-    alignItems: "center",
+    flex: 1,
     justifyContent: "center",
+    alignItems: "center",
   },
   headerSkeleton: {
-    width: "60%",
+    width: "50%",
     height: 28,
-    borderRadius: 4,
+    borderRadius: 8,
+    marginBottom: 20,
   },
-  lineSkeleton: {
+  fieldSkeleton: {
     width: "80%",
-    height: 20,
-    borderRadius: 4,
+    height: 50,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  header: {
+    padding: 24,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#FF6B6B",
+    marginTop: 8,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: "#666",
+    marginTop: 4,
   },
   section: {
-    marginBottom: 30,
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: COLORS.primary,
-    marginBottom: 15,
-  },
-  profileCard: {
-    backgroundColor: COLORS.backgroundLight,
-    borderRadius: SIZES.borderRadius,
-    padding: 20,
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: COLORS.secondary,
-  },
-  profileIcon: {
-    marginBottom: 15,
-  },
-  profileDetails: {
-    width: "100%",
-  },
-  editHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#FF6B6B",
   },
   editButton: {
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  editGradient: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.primary,
-    borderRadius: SIZES.borderRadius,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
-  editButtonText: {
-    color: COLORS.background,
+  editIcon: {
+    marginRight: 6,
+  },
+  editText: {
     fontSize: 14,
-    marginLeft: 5,
+    fontWeight: "600",
+    color: "#FFF",
   },
-  label: {
+  profileCard: {
+    backgroundColor: "#FFF",
+    borderRadius: 16,
+    padding: 16,
+    elevation: 3,
+  },
+  fieldContainer: {
+    marginBottom: 12,
+  },
+  fieldLabel: {
     fontSize: 14,
-    color: COLORS.textSecondary,
-    marginBottom: 5,
+    color: "#777",
+    marginBottom: 4,
   },
-  input: {
-    backgroundColor: COLORS.backgroundLight,
-    borderRadius: SIZES.borderRadius,
-    padding: 10,
+  fieldInput: {
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    padding: 12,
     fontSize: 16,
-    color: COLORS.textPrimary,
-    marginBottom: 15,
+    color: "#333",
     borderWidth: 1,
-    borderColor: COLORS.secondary,
+    borderColor: "#EEE",
   },
-  inputDisabled: {
-    backgroundColor: COLORS.secondaryLight,
-    color: COLORS.textSecondary,
+  fieldInputDisabled: {
+    backgroundColor: "#F8F9FA",
+    color: "#777",
   },
-  settingsOption: {
+  settingsCard: {
+    backgroundColor: "#FFF",
+    borderRadius: 16,
+    padding: 16,
+    elevation: 3,
+  },
+  settingOption: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: COLORS.backgroundLight,
-    borderRadius: SIZES.borderRadius,
-    padding: 15,
-    marginBottom: 15,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
   },
-  settingsLabel: {
+  settingLabel: {
     fontSize: 16,
-    color: COLORS.textPrimary,
+    color: "#333",
   },
   dropdown: {
     flexDirection: "row",
@@ -354,23 +345,27 @@ const styles = StyleSheet.create({
   },
   dropdownText: {
     fontSize: 16,
-    color: COLORS.textPrimary,
-    marginRight: 10,
+    color: "#FF6B6B",
+    marginRight: 8,
   },
   logoutButton: {
+    borderRadius: 12,
+    overflow: "hidden",
+    marginTop: 20,
+  },
+  logoutGradient: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: COLORS.primary,
-    borderRadius: SIZES.borderRadius,
-    padding: 15,
-    marginTop: 20,
+    padding: 14,
+  },
+  logoutIcon: {
+    marginRight: 8,
   },
   logoutText: {
-    color: COLORS.background,
     fontSize: 16,
-    fontWeight: "bold",
-    marginLeft: 10,
+    fontWeight: "600",
+    color: "#FFF",
   },
 });
 

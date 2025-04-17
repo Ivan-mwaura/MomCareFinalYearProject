@@ -68,6 +68,12 @@
       td {
         color: vars.$text-secondary;
 
+        .actions {
+          display: flex;
+          justify-content: center;
+          gap: 5px;
+        }
+
         button {
           background-color: vars.$primary;
           color: vars.$background;
@@ -250,6 +256,53 @@
         td {
           padding: math.div(vars.$padding, 3);
         }
+      }
+    }
+  }
+}
+
+.description-cell {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: help;
+}
+
+.description-content {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 15px;
+  background-color: vars.$background-light;
+  border-radius: vars.$border-radius;
+  margin-bottom: vars.$padding;
+
+  .description-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+
+    li {
+      position: relative;
+      padding: 8px 0 8px 20px;
+      border-bottom: 1px solid rgba(vars.$accent, 0.1);
+      color: vars.$text-secondary;
+      font-size: 14px;
+      line-height: 1.5;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &::before {
+        content: "•";
+        position: absolute;
+        left: 0;
+        color: vars.$primary;
+      }
+
+      &:hover {
+        background-color: rgba(vars.$accent, 0.05);
       }
     }
   }

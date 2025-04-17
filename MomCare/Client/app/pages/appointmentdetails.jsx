@@ -8,188 +8,192 @@ import {
   ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { COLORS, SIZES } from "../styles/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSelector } from "react-redux";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import CustomSkeleton from "./customSkeleton"; // Adjust path as needed
+import CustomSkeleton from "./customSkeleton";
 import { BACKEND_URL } from "@env";
 
 const AppointmentDetails = () => {
-  const appointmentId = useSelector(
-    (state) => state.appointments.selectedAppointment
-  );
+  const appointmentId = useSelector((state) => state.appointments.selectedAppointment);
   const router = useRouter();
   const [appointment, setAppointment] = useState(null);
   const [loading, setLoading] = useState(true);
-
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
-  // Fetch appointment details from the backend
   useEffect(() => {
     const fetchAppointment = async () => {
       try {
         const token = await AsyncStorage.getItem("token");
-        const response = await axios.get(
-          `${BACKEND_URL}/api/appointments/${appointmentId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        // Assume the appointment is returned in response.data.appointment
+        const response = await axios.get(`${BACKEND_URL}/api/appointments/${appointmentId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setAppointment(response.data.appointment);
       } catch (error) {
-        console.error("Error fetching appointment details:", error.response?.data || error.message);
+        console.error("Error fetching appointment details:", error.message);
       } finally {
         setLoading(false);
       }
     };
 
-    if (appointmentId) {
-      fetchAppointment();
-    }
+    if (appointmentId) fetchAppointment();
   }, [appointmentId]);
 
-  // Function to reschedule the appointment
   const handleReschedule = async () => {
     if (!selectedDate || !selectedTime) {
-      alert("Please select a valid date and time.");
+      alert("Please pick a date and time, mama!");
       return;
     }
 
-    // Format date and time (adjust as needed)
     const formattedDate = selectedDate.toLocaleDateString("en-US");
-    const formattedTime = selectedTime.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const formattedTime = selectedTime.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 
     try {
       const token = await AsyncStorage.getItem("token");
+      const userData = await AsyncStorage.getItem("user");
+      if (!userData) throw new Error("User not found");
+      
+      const user = JSON.parse(userData);
+      const motherId = user.motherId || user.id;
+
       const response = await axios.put(
-        `http://192.168.0.106:5000/api/appointments/${appointmentId}`,
-        { date: formattedDate, time: formattedTime },
+        `${BACKEND_URL}/api/appointments/${appointmentId}`,
+        { 
+          date: formattedDate, 
+          time: formattedTime,
+          motherId 
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      // Update appointment state with new details
       setAppointment(response.data.appointment);
-      alert("Appointment successfully rescheduled.");
+      alert("New date set, mama! You're all good.");
+      setIsModalVisible(false);
     } catch (error) {
-      console.error(
-        "Error rescheduling appointment:",
-        error.response?.data || error.message
-      );
-      alert("Failed to reschedule appointment. Please try again.");
+      console.error("Error rescheduling appointment:", error.message);
+      alert("Oops! Couldn't reschedule. Try again, sweetie.");
     }
-    setIsModalVisible(false);
   };
 
-  // --- Custom Skeleton Loading Placeholder --- //
   if (loading || !appointment) {
     return (
-      <ScrollView contentContainerStyle={styles.loadingContainer}>
-        {/* Header Skeleton (for provider info) */}
-        <CustomSkeleton style={styles.headerSkeleton} />
-        <CustomSkeleton style={[styles.headerSkeleton, { width: "60%", marginTop: 8 }]} />
-
-        {/* Detail rows skeleton */}
-        <View style={styles.detailsSkeleton}>
-          <CustomSkeleton style={styles.detailSkeleton} />
-          <CustomSkeleton style={[styles.detailSkeleton, { width: "80%", marginTop: 6 }]} />
-          <CustomSkeleton style={[styles.detailSkeleton, { width: "70%", marginTop: 6 }]} />
-          <CustomSkeleton style={[styles.detailSkeleton, { width: "90%", marginTop: 6 }]} />
-        </View>
-
-        {/* Reschedule Button skeleton */}
-        <CustomSkeleton style={styles.buttonSkeleton} />
-      </ScrollView>
+      <LinearGradient colors={["#FFF5F7", "#F8F9FA"]} style={styles.skeletonContainer}>
+        <CustomSkeleton style={styles.skeletonHeader} />
+        <CustomSkeleton style={styles.skeletonCard} />
+        <CustomSkeleton style={styles.skeletonButton} />
+      </LinearGradient>
     );
   }
-  // --- End Skeleton Loading Block --- //
 
   return (
     <View style={styles.container}>
-      {/* Header Section */}
-      <View style={styles.header}>
-        <Text style={styles.title}>
-          👨‍⚕️ Attending Doctor: {appointment.provider}
-        </Text>
-        <View style={styles.statusContainer}>
-          <Text style={styles.statusLabel}>Appointment Status:</Text>
-          <Text
-            style={[
-              styles.status,
-              appointment.status === "Confirmed"
-                ? styles.statusConfirmed
-                : appointment.status === "Pending"
-                ? styles.statusPending
-                : styles.statusCompleted,
-            ]}
-          >
-            {appointment.status}
-          </Text>
-        </View>
-      </View>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <LinearGradient colors={["#FFF5F7", "#FFE4E6"]} style={styles.header}>
+          <Ionicons name="calendar" size={32} color="#FF6B6B" />
+          <Text style={styles.headerTitle}>Mama's Date</Text>
+          <Text style={styles.headerSubtitle}>Details just for you</Text>
+        </LinearGradient>
 
-      {/* Details Section */}
-      <View style={styles.detailsContainer}>
-        <View style={styles.detailRow}>
-          <Text style={styles.label}>📅 Date:</Text>
-          <Text style={styles.value}>{appointment.date}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.label}>⏰ Time:</Text>
-          <Text style={styles.value}>{appointment.time}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.label}>📍 Location:</Text>
-          <Text style={styles.value}>{appointment.location}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.label}>📝 Description:</Text>
-          <Text style={styles.value}>{appointment.description}</Text>
-        </View>
-      </View>
+        {/* Appointment Card */}
+        <View style={styles.card}>
+          {/* Header Section */}
+          <View style={styles.cardHeader}>
+            <View style={styles.providerSection}>
+              <Ionicons name="medical" size={24} color="#FF6B6B" />
+              <Text style={styles.provider}>{appointment.provider}</Text>
+            </View>
+            <View style={[
+              styles.statusBadge,
+              appointment.status === "Confirmed" && styles.statusConfirmed,
+              appointment.status === "Pending" && styles.statusPending,
+              appointment.status === "Completed" && styles.statusCompleted,
+            ]}>
+              <Text style={styles.statusText}>{appointment.status}</Text>
+            </View>
+          </View>
 
-      {/* Reschedule Button */}
-      {!appointment.rescheduled && (
-        <TouchableOpacity
-          style={styles.rescheduleButton}
-          onPress={() => setIsModalVisible(true)}
-        >
-          <Text style={styles.buttonText}>Reschedule Appointment</Text>
+          {/* Type Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Appointment Type</Text>
+            <View style={styles.detailRow}>
+              <Ionicons name="medical-outline" size={18} color="#FF6B6B" />
+              <Text style={styles.detailText}>{appointment.type}</Text>
+            </View>
+          </View>
+
+          {/* Date & Time Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Date & Time</Text>
+            <View style={styles.detailRow}>
+              <Ionicons name="calendar" size={18} color="#FF6B6B" />
+              <Text style={styles.detailText}>{appointment.date}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Ionicons name="time" size={18} color="#FF6B6B" />
+              <Text style={styles.detailText}>{appointment.time}</Text>
+            </View>
+          </View>
+
+          {/* Location Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Location</Text>
+            <View style={styles.detailRow}>
+              <Ionicons name="location" size={18} color="#FF6B6B" />
+              <Text style={styles.detailText}>{appointment.location}</Text>
+            </View>
+          </View>
+
+          {/* Description Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Details</Text>
+            {appointment.description.split(';').map((detail, index) => (
+              <View key={index} style={styles.detailRow}>
+                <View style={styles.bulletPoint} />
+                <Text style={styles.detailText}>{detail.trim()}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Action Buttons */}
+        {!appointment.rescheduled && (
+          <TouchableOpacity style={styles.actionButton} onPress={() => setIsModalVisible(true)}>
+            <LinearGradient colors={["#FF6B6B", "#FF8787"]} style={styles.buttonGradient}>
+              <Ionicons name="refresh" size={20} color="#FFF" style={styles.buttonIcon} />
+              <Text style={styles.buttonText}>Pick a New Time</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
+        {appointment.rescheduled && (
+          <Text style={styles.noticeText}>This date's set, mama—no more changes here!</Text>
+        )}
+        <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/pages/appointments")}>
+          <LinearGradient colors={["#FF6B6B", "#FF8787"]} style={styles.buttonGradient}>
+            <Ionicons name="arrow-back" size={20} color="#FFF" style={styles.buttonIcon} />
+            <Text style={styles.buttonText}>Back to Dates</Text>
+          </LinearGradient>
         </TouchableOpacity>
-      )}
-
-      {appointment.rescheduled && (
-        <Text style={styles.rescheduleNotice}>
-          Appointment has already been rescheduled and cannot be changed again.
-        </Text>
-      )}
-
-      {/* Back Button */}
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => router.push("/pages/appointments")}
-      >
-        <Text style={styles.buttonText}>Back to Appointments</Text>
-      </TouchableOpacity>
+      </ScrollView>
 
       {/* Reschedule Modal */}
-      <Modal visible={isModalVisible} transparent>
-        <View style={styles.modalContainer}>
+      <Modal visible={isModalVisible} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Reschedule Appointment</Text>
-
-            {/* Date Picker */}
+            <Text style={styles.modalTitle}>Set a New Time</Text>
             <TouchableOpacity
               style={styles.pickerButton}
               onPress={() => setShowDatePicker(true)}
             >
-              <Text style={styles.pickerButtonText}>Select Date</Text>
+              <Text style={styles.pickerText}>
+                Date: {selectedDate.toLocaleDateString("en-US")}
+              </Text>
             </TouchableOpacity>
             {showDatePicker && (
               <DateTimePicker
@@ -202,16 +206,13 @@ const AppointmentDetails = () => {
                 }}
               />
             )}
-            <Text style={styles.selectedText}>
-              Selected Date: {selectedDate.toLocaleDateString("en-US")}
-            </Text>
-
-            {/* Time Picker */}
             <TouchableOpacity
               style={styles.pickerButton}
               onPress={() => setShowTimePicker(true)}
             >
-              <Text style={styles.pickerButtonText}>Select Time</Text>
+              <Text style={styles.pickerText}>
+                Time: {selectedTime.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+              </Text>
             </TouchableOpacity>
             {showTimePicker && (
               <DateTimePicker
@@ -224,24 +225,17 @@ const AppointmentDetails = () => {
                 }}
               />
             )}
-            <Text style={styles.selectedText}>
-              Selected Time:{" "}
-              {selectedTime.toLocaleTimeString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </Text>
-
-            {/* Modal Actions */}
             <View style={styles.modalActions}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
+                style={styles.modalButton}
                 onPress={() => setIsModalVisible(false)}
               >
-                <Text style={styles.buttonText}>Cancel</Text>
+                <Text style={styles.modalButtonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalButton} onPress={handleReschedule}>
-                <Text style={styles.buttonText}>Submit</Text>
+                <LinearGradient colors={["#FF6B6B", "#FF8787"]} style={styles.modalButtonGradient}>
+                  <Text style={styles.modalButtonText}>Save</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
           </View>
@@ -252,187 +246,205 @@ const AppointmentDetails = () => {
 };
 
 const styles = StyleSheet.create({
-  // Main container style
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    padding: 20,
+    backgroundColor: "#F8F9FA",
   },
   header: {
+    padding: 24,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    alignItems: "center",
     marginBottom: 20,
-    alignItems: "center",
   },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: COLORS.textPrimary,
-    textAlign: "center",
-    marginBottom: 10,
-    fontStyle: "italic",
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#FF6B6B",
+    marginTop: 8,
   },
-  statusContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 5,
-  },
-  statusLabel: {
+  headerSubtitle: {
     fontSize: 16,
-    fontWeight: "bold",
-    color: COLORS.textPrimary,
-    marginRight: 8,
+    color: "#666",
+    marginTop: 4,
   },
-  status: {
-    fontSize: 12,
-    fontWeight: "bold",
-    textTransform: "uppercase",
-    color: "white",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
-    overflow: "hidden",
-  },
-  statusConfirmed: {
-    backgroundColor: "green",
-  },
-  statusPending: {
-    backgroundColor: "orange",
-  },
-  statusCompleted: {
-    backgroundColor: "#888",
-  },
-  detailsContainer: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
     padding: 20,
-    shadowColor: "#000",
+    margin: 16,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  providerSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  provider: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#2D3748',
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#E2E8F0',
+  },
+  statusText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#4A5568',
+  },
+  statusConfirmed: {
+    backgroundColor: '#C6F6D5',
+  },
+  statusPending: {
+    backgroundColor: '#FEEBC8',
+  },
+  statusCompleted: {
+    backgroundColor: '#E2E8F0',
+  },
+  section: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#4A5568',
+    marginBottom: 8,
   },
   detailRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  bulletPoint: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FF6B6B',
+    marginRight: 12,
+    marginTop: 8,
+  },
+  detailText: {
+    fontSize: 16,
+    color: '#4A5568',
+    flex: 1,
+    lineHeight: 22,
+  },
+  actionButton: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  buttonGradient: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 15,
+    justifyContent: "center",
+    padding: 14,
   },
-  label: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
-    marginRight: 10,
-    flex: 0.4,
-  },
-  value: {
-    fontSize: 16,
-    fontWeight: "400",
-    color: COLORS.textSecondary,
-    flex: 0.6,
-  },
-  rescheduleButton: {
-    backgroundColor: "#6A5ACD",
-    padding: 15,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  rescheduleNotice: {
-    textAlign: "center",
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginBottom: 20,
-  },
-  button: {
-    backgroundColor: COLORS.primary,
-    padding: 15,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 10,
+  buttonIcon: {
+    marginRight: 8,
   },
   buttonText: {
-    color: "white",
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "600",
+    color: "#FFF",
   },
-  modalContainer: {
+  noticeText: {
+    fontSize: 14,
+    color: "#777",
+    textAlign: "center",
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  modalOverlay: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.5)",
   },
   modalContent: {
-    backgroundColor: "#fff",
+    backgroundColor: "#FFF",
+    borderRadius: 16,
     padding: 20,
-    borderRadius: 12,
     width: "85%",
+    elevation: 5,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.primary,
-    marginBottom: 20,
+    fontWeight: "600",
+    color: "#FF6B6B",
     textAlign: "center",
+    marginBottom: 20,
   },
   pickerButton: {
-    backgroundColor: COLORS.accent,
-    padding: 10,
-    borderRadius: SIZES.borderRadius,
+    backgroundColor: "#FFF5F7",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
     alignItems: "center",
-    marginBottom: 10,
   },
-  pickerButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  selectedText: {
-    textAlign: "center",
-    marginBottom: 10,
-    fontSize: 14,
-    color: COLORS.textPrimary,
+  pickerText: {
+    fontSize: 16,
+    color: "#333",
   },
   modalActions: {
     flexDirection: "row",
     justifyContent: "space-between",
+    marginTop: 20,
   },
   modalButton: {
-    backgroundColor: COLORS.primary,
-    padding: 10,
-    borderRadius: SIZES.borderRadius,
+    flex: 0.48,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  modalButtonGradient: {
+    padding: 12,
     alignItems: "center",
-    flex: 0.45,
   },
-  cancelButton: {
-    backgroundColor: COLORS.secondary,
+  modalButtonText: {
+    fontSize: 16,
+    color: "#FF6B6B",
+    fontWeight: "600",
   },
-
-  // Skeleton Loading Styles
-  loadingContainer: {
-    flexGrow: 1,
-    padding: 20,
-    backgroundColor: COLORS.background,
+  skeletonContainer: {
+    flex: 1,
+    padding: 16,
     alignItems: "center",
-    justifyContent: "center",
   },
-  headerSkeleton: {
-    width: "80%",
-    height: 24,
-    borderRadius: 4,
+  skeletonHeader: {
+    width: "60%",
+    height: 28,
+    borderRadius: 8,
+    marginBottom: 20,
   },
-  detailsSkeleton: {
-    marginTop: 20,
+  skeletonCard: {
     width: "100%",
+    height: 180,
+    borderRadius: 12,
+    marginBottom: 20,
   },
-  detailSkeleton: {
-    width: "90%",
-    height: 18,
-    borderRadius: 4,
-    marginTop: 6,
-  },
-  buttonSkeleton: {
+  skeletonButton: {
     width: "50%",
-    height: 35,
-    borderRadius: SIZES.borderRadius,
-    marginTop: 20,
+    height: 40,
+    borderRadius: 12,
   },
 });
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,140 +6,73 @@ import {
   TouchableOpacity,
   ScrollView,
   Modal,
+  Dimensions,
 } from "react-native";
+import * as Animatable from 'react-native-animatable';
 import { ProgressChart } from "react-native-chart-kit";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, SIZES } from "../styles/theme";
-import { Dimensions } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ML_URL, BACKEND_URL } from "@env";
 
 const screenWidth = Dimensions.get("window").width;
 
 const RiskAssessment = () => {
-  // State for risk overview and recommendations
   const [riskScore, setRiskScore] = useState(65);
   const [recommendations, setRecommendations] = useState([
-    "Keep up with your scheduled check-ups.",
-    "Maintain a healthy lifestyle.",
-    "Consult with your CHW if needed.",
+    "Keep up with your check-ups, mama!",
+    "Nourish yourself with love and care.",
+    "Reach out to your CHW anytime.",
   ]);
-  // Modal and assessment state
   const [isAssessmentModalVisible, setIsAssessmentModalVisible] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [assessmentData, setAssessmentData] = useState({});
   const [isSummaryVisible, setIsSummaryVisible] = useState(false);
-
-  // Sample static data for clinics
-  const clinics = [
-    { name: "City Health Clinic", distance: "2.5 km", travelTime: "10 mins" },
-    { name: "Green Valley Medical Center", distance: "4 km", travelTime: "15 mins" },
-  ];
-
-  // Assessment questions remain unchanged
+  const [displayedText, setDisplayedText] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  
   const assessmentQuestions = [
-    {
-      id: "1",
-      question: "How frequently do you watch TV?",
-      options: [
-        { label: "Not at all", value: 0 },
-        { label: "Less than once a week", value: 1 },
-        { label: "At least once a week", value: 2 },
-      ],
-    },
-    {
-      id: "2",
-      question: "Is distance to the health facility a problem?",
-      options: [
-        { label: "Big Problem", value: 1 },
-        { label: "Not a big problem", value: 2 },
-      ],
-    },
-    {
-      id: "3",
-      question: "How frequently do you listen to the radio?",
-      options: [
-        { label: "Not at all", value: 0 },
-        { label: "Less than once a week", value: 1 },
-        { label: "At least once a week", value: 2 },
-      ],
-    },
-    {
-      id: "4",
-      question: "What is your current marital status?",
-      options: [
-        { label: "Never in Union", value: 0 },
-        { label: "Married", value: 1 },
-        { label: "Living with Partner", value: 2 },
-        { label: "Widowed", value: 3 },
-        { label: "Divorced", value: 4 },
-        { label: "Separated", value: 5 },
-      ],
-    },
-    {
-      id: "5",
-      question: "What is your wealth index?",
-      options: [
-        { label: "Poorest", value: 1 },
-        { label: "Poorer", value: 2 },
-        { label: "Middle", value: 3 },
-        { label: "Richer", value: 4 },
-        { label: "Richest", value: 5 },
-      ],
-    },
-    {
-      id: "6",
-      question: "What is your educational level?",
-      options: [
-        { label: "No education", value: 0 },
-        { label: "Primary", value: 1 },
-        { label: "Secondary", value: 2 },
-        { label: "Higher", value: 3 },
-      ],
-    },
-    {
-      id: "7",
-      question: "What is your age group?",
-      options: [
-        { label: "15-19", value: 1 },
-        { label: "20-24", value: 2 },
-        { label: "25-29", value: 3 },
-        { label: "30-34", value: 4 },
-        { label: "35-39", value: 5 },
-        { label: "40-44", value: 6 },
-        { label: "45-49", value: 7 },
-      ],
-    },
-    {
-      id: "8",
-      question: "What is your current occupation?",
-      options: [
-        { label: "Unemployed", value: 0 },
-        { label: "Employed", value: 1 },
-        { label: "Self-employed", value: 2 },
-        { label: "Student", value: 3 },
-        { label: "Retired", value: 4 },
-        { label: "Housewife", value: 5 },
-      ],
-    },
-    {
-      id: "9",
-      question: "What is the Location of your residence?",
-      options: [
-        { label: "Urban", value: 0 },
-        { label: "Rural", value: 1 },
-      ],
-    },
+    { id: "1", question: "How often do you enjoy TV time?", options: ["Not at all", "Rarely", "Weekly"] },
+    { id: "2", question: "Is getting to the clinic tough?", options: ["Yes, very", "Not really"] },
+    { id: "3", question: "Do you tune into the radio?", options: ["Never", "Sometimes", "Often"] },
+    { id: "4", question: "What's your relationship status?", options: ["Single", "Married", "Partnered", "Widowed", "Divorced", "Separated"] },
+    { id: "5", question: "How's your financial comfort?", options: ["Struggling", "Okay", "Stable", "Well-off", "Thriving"] },
+    { id: "6", question: "What's your education level?", options: ["None", "Primary", "Secondary", "Higher"] },
+    { id: "7", question: "How young at heart are you?", options: ["15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49"] },
+    { id: "8", question: "What keeps you busy?", options: ["Unemployed", "Employed", "Self-employed", "Student", "Retired", "Home Mama"] },
+    { id: "9", question: "Where do you call home?", options: ["City", "Countryside"] },
   ];
 
   const handleAnswer = (questionId, value) => {
     setAssessmentData((prev) => ({ ...prev, [questionId]: value }));
   };
 
-  // Prevent moving forward if current question is unanswered.
+  const typeText = (text, callback) => {
+    setIsTyping(true);
+    let currentIndex = 0;
+    const interval = setInterval(() => {
+      if (currentIndex < text.length) {
+        setDisplayedText(text.substring(0, currentIndex + 1));
+        currentIndex++;
+      } else {
+        clearInterval(interval);
+        setIsTyping(false);
+        if (callback) callback();
+      }
+    }, 30);
+  };
+
+  useEffect(() => {
+    if (isAssessmentModalVisible && !isSummaryVisible) {
+      setDisplayedText("");
+      typeText(assessmentQuestions[currentStep].question);
+    }
+  }, [currentStep, isAssessmentModalVisible, isSummaryVisible]);
+
   const handleNextQuestion = () => {
     if (assessmentData[assessmentQuestions[currentStep].id] === undefined) {
-      alert("Please answer the question before proceeding.");
+      alert("Please choose an answer, mama!");
       return;
     }
     if (currentStep < assessmentQuestions.length - 1) {
@@ -153,10 +86,8 @@ const RiskAssessment = () => {
     try {
       const token = await AsyncStorage.getItem("token");
       const userData = await AsyncStorage.getItem("user");
-      if (!userData) {
-        alert("User details not found. Please log in again.");
-        return;
-      }
+      if (!userData) throw new Error("User not found");
+
       const user = JSON.parse(userData);
       const modelInput = {
         Frequency_media_use: assessmentData["1"] ?? 0,
@@ -171,41 +102,20 @@ const RiskAssessment = () => {
         Postnatal_visits: 0,
       };
 
-      const modelResponse = await axios.post(
-        "http://192.168.0.106:6000/predict",
-        modelInput,
-        { timeout: 10000 }
-      );
+      const modelResponse = await axios.post(`${ML_URL}/predict`, modelInput, { timeout: 10000 });
       const { predicted_risk, risk_value } = modelResponse.data;
+
+      console.log(modelResponse.data);
+      
+      // Enhanced recommendations based on risk level
+      const riskLevel = risk_value > 70 ? "High" : risk_value > 40 ? "Moderate" : "Low";
+      const newRecommendations = getRecommendations(riskLevel, risk_value);
+      
       setRiskScore(risk_value);
+      setRecommendations(newRecommendations);
 
-      if (predicted_risk === "High") {
-        setRecommendations([
-          "Urgent medical review is recommended.",
-          "Contact your CHW immediately.",
-          "Schedule an immediate appointment.",
-          "Monitor your symptoms closely.",
-          "Visit your nearest health facility as soon as possible.",
-          "Review your daily routine and reduce stress.",
-          "Keep a record of any worsening symptoms.",
-          "Maintain a balanced diet and stay hydrated.",
-          "Ensure you get enough rest and avoid strenuous activities.",
-          "Follow up with your CHW regularly for updates.",
-        ]);
-      } else {
-        setRecommendations([
-          "Keep up with your scheduled check-ups.",
-          "Maintain a healthy lifestyle.",
-          "Consult with your CHW if needed.",
-        ]);
-      }
-
-      const predictionPayload = {
-        motherId: user.motherId ?? user.id,
-        predicted_risk,
-      };
-
-      await axios.post("http://192.168.0.106:5000/api/predictions", predictionPayload, {
+      const predictionPayload = { motherId: user.motherId ?? user.id, predicted_risk };
+      await axios.post(`{BACKEND_URL}/api/predictions`, predictionPayload, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -214,138 +124,188 @@ const RiskAssessment = () => {
       setCurrentStep(0);
       setAssessmentData({});
     } catch (error) {
-      console.error("Error submitting risk assessment:", error.message);
-      alert("An error occurred. Please try again.");
+      console.error("Error submitting assessment:", error.message);
+      alert("Oops! Something went wrong. Try again, mama.");
     }
   };
 
+  const getRecommendations = (riskLevel, riskValue) => {
+    const baseRecommendations = {
+      High: [
+        "Schedule an immediate consultation with your healthcare provider",
+        "Increase frequency of prenatal check-ups",
+        "Consider additional monitoring and support services",
+        "Review and adjust your daily routine for better health",
+        "Connect with a specialist for personalized care"
+      ],
+      Moderate: [
+        "Maintain regular check-ups with your healthcare provider",
+        "Focus on balanced nutrition and adequate rest",
+        "Stay active with moderate exercise",
+        "Monitor your health indicators regularly",
+        "Keep your healthcare provider informed of any changes"
+      ],
+      Low: [
+        "Continue with your current healthy lifestyle",
+        "Maintain regular prenatal visits",
+        "Stay informed about pregnancy health",
+        "Practice stress management techniques",
+        "Keep up with your exercise routine"
+      ]
+    };
+
+    // Add personalized recommendations based on risk value
+    const personalizedRecs = [];
+    if (riskValue > 80) {
+      personalizedRecs.push("Consider additional specialist consultations");
+    }
+    if (riskValue > 60) {
+      personalizedRecs.push("Implement more frequent health monitoring");
+    }
+    if (riskValue < 30) {
+      personalizedRecs.push("Continue your excellent health practices");
+    }
+
+    return [...baseRecommendations[riskLevel], ...personalizedRecs];
+  };
+
   return (
-    <ScrollView style={styles.container}>
-      {/* Compact Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Risk Assessment</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      {/* Header */}
+      <LinearGradient colors={["#FFF5F7", "#FFE4E6"]} style={styles.header}>
+        <Ionicons name="shield-checkmark" size={32} color="#FF6B6B" />
+        <Text style={styles.headerTitle}>Mama's Safety Check</Text>
+        <Text style={styles.headerSubtitle}>Keeping you and baby well</Text>
+      </LinearGradient>
+
+      {/* Risk Overview */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Your Wellness Score</Text>
+        <Animatable.View
+          animation="fadeIn"
+          duration={800}
+          style={styles.riskCard}
+        >
+          <ProgressChart
+            data={{ data: [riskScore / 100] }}
+            width={100}
+            height={100}
+            strokeWidth={12}
+            radius={40}
+            chartConfig={{
+              backgroundGradientFrom: "#FFF",
+              backgroundGradientTo: "#FFF",
+              color: () => "#FF6B6B",
+            }}
+            hideLegend={true}
+          />
+          <View style={styles.riskInfo}>
+            <Text style={styles.riskLabel}>Risk Level</Text>
+            <Text style={styles.riskLevel}>
+              {riskScore > 70 ? "High" : riskScore > 40 ? "Moderate" : "Low"}
+            </Text>
+            <Text style={styles.riskScore}>{riskScore}%</Text>
+          </View>
+        </Animatable.View>
       </View>
 
-      {/* Assessment Trigger */}
+      {/* Take Assessment Button */}
       <TouchableOpacity
         style={styles.assessmentButton}
         onPress={() => setIsAssessmentModalVisible(true)}
       >
-        <Ionicons name="clipboard-outline" size={20} color={COLORS.background} />
-        <Text style={styles.assessmentButtonText}>Take Assessment</Text>
+        <LinearGradient colors={["#FF6B6B", "#FF8787"]} style={styles.buttonGradient}>
+          <Ionicons name="heart" size={20} color="#FFF" style={styles.buttonIcon} />
+          <Text style={styles.buttonText}>Check My Wellness</Text>
+        </LinearGradient>
       </TouchableOpacity>
-
-      {/* Redesigned Risk Overview Card */}
-      <View style={styles.riskCard}>
-        <View style={styles.riskCardContent}>
-          <View style={styles.progressContainer}>
-            <ProgressChart
-              data={{ labels: [""], data: [riskScore / 100] }}
-              width={80}
-              height={80}
-              strokeWidth={10}
-              radius={32}
-              chartConfig={{
-                backgroundGradientFrom: COLORS.secondary,
-                backgroundGradientTo: COLORS.secondary,
-                color: (opacity = 1) => `rgba(247,108,108, ${opacity})`,
-                labelColor: () => COLORS.textPrimary,
-              }}
-              hideLegend={true}
-            />
-          </View>
-          <View style={styles.riskDetails}>
-            <Text style={styles.riskDetailLabel}>Risk Level</Text>
-            <Text style={styles.riskDetailText}>
-              {riskScore > 70 ? "High" : riskScore > 40 ? "Moderate" : "Low"}
-            </Text>
-            <Text style={styles.riskPercentage}>{riskScore.toFixed(1)}%</Text>
-          </View>
-        </View>
-      </View>
 
       {/* Recommendations */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recommendations</Text>
+        <Text style={styles.sectionTitle}>Mama's Next Steps</Text>
         {recommendations.map((rec, index) => (
-          <View key={index} style={styles.card}>
-            <Ionicons name="checkmark-circle-outline" size={18} color={COLORS.primary} />
-            <Text style={styles.cardText}>{rec}</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* Nearby Clinics */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Nearby Clinics</Text>
-        {clinics.map((clinic, index) => (
-          <TouchableOpacity key={index} style={styles.card} onPress={() => {}}>
-            <View style={styles.clinicInfo}>
-              <Text style={styles.clinicName}>{clinic.name}</Text>
-              <Text style={styles.clinicDetails}>
-                {clinic.distance} away, {clinic.travelTime} by car
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={COLORS.primary} />
-          </TouchableOpacity>
+          <Animatable.View
+            key={index}
+            animation="slideInLeft"
+            delay={index * 200}
+            style={styles.recCard}
+          >
+            <Ionicons name="flower" size={20} color="#FF6B6B" />
+            <Text style={styles.recText}>{rec}</Text>
+          </Animatable.View>
         ))}
       </View>
 
       {/* Assessment Modal */}
-      <Modal visible={isAssessmentModalVisible} transparent>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+      <Modal visible={isAssessmentModalVisible} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <LinearGradient colors={["#FFF5F7", "#FFE4E6"]} style={styles.modalContent}>
             {!isSummaryVisible ? (
               <>
-                <Text style={styles.modalTitle}>
-                  {assessmentQuestions[currentStep].question}
-                </Text>
-                {assessmentQuestions[currentStep].options.map((option) => (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[
-                      styles.optionButton,
-                      assessmentData[assessmentQuestions[currentStep].id] === option.value &&
-                        styles.optionButtonSelected,
-                    ]}
-                    onPress={() => handleAnswer(assessmentQuestions[currentStep].id, option.value)}
-                  >
-                    <Text style={styles.optionText}>{option.label}</Text>
-                  </TouchableOpacity>
-                ))}
+                <Animatable.View
+                  animation="fadeIn"
+                  duration={500}
+                  style={styles.questionContainer}
+                >
+                  <Text style={styles.modalTitle}>{displayedText}</Text>
+                  {isTyping && <Text style={styles.typingIndicator}>|</Text>}
+                </Animatable.View>
+                <ScrollView style={styles.optionsContainer}>
+                  {assessmentQuestions[currentStep].options.map((option, idx) => (
+                    <Animatable.View
+                      key={idx}
+                      animation="fadeInUp"
+                      delay={idx * 100}
+                      duration={400}
+                    >
+                      <TouchableOpacity
+                        style={[
+                          styles.optionButton,
+                          assessmentData[assessmentQuestions[currentStep].id] === idx &&
+                            styles.optionSelected,
+                        ]}
+                        onPress={() => handleAnswer(assessmentQuestions[currentStep].id, idx)}
+                      >
+                        <Text style={styles.optionText}>{option}</Text>
+                      </TouchableOpacity>
+                    </Animatable.View>
+                  ))}
+                </ScrollView>
                 <TouchableOpacity style={styles.nextButton} onPress={handleNextQuestion}>
-                  <Text style={styles.buttonText}>
-                    {currentStep === assessmentQuestions.length - 1 ? "Finish" : "Next"}
+                  <Text style={styles.nextButtonText}>
+                    {currentStep === assessmentQuestions.length - 1 ? "Review" : "Next"}
                   </Text>
                 </TouchableOpacity>
               </>
             ) : (
               <>
-                <Text style={styles.modalTitle}>Review Answers</Text>
-                {Object.entries(assessmentData).map(([key, value]) => (
-                  <Text key={key} style={styles.modalText}>
-                    {assessmentQuestions.find((q) => q.id === key)?.question}:{" "}
-                    {assessmentQuestions
-                      .find((q) => q.id === key)
-                      ?.options.find((o) => o.value === value)?.label}
-                  </Text>
-                ))}
+                <Text style={styles.modalTitle}>Your Answers, Mama</Text>
+                <ScrollView style={styles.summaryContainer}>
+                  {Object.entries(assessmentData).map(([key, value], index) => (
+                    <Animatable.View
+                      key={key}
+                      animation="slideInLeft"
+                      delay={index * 200}
+                    >
+                      <Text style={styles.summaryText}>
+                        {assessmentQuestions.find((q) => q.id === key)?.question}:{" "}
+                        {assessmentQuestions.find((q) => q.id === key)?.options[value]}
+                      </Text>
+                    </Animatable.View>
+                  ))}
+                </ScrollView>
                 <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-                  <Text style={styles.buttonText}>Submit</Text>
+                  <Text style={styles.submitButtonText}>Submit</Text>
                 </TouchableOpacity>
               </>
             )}
             <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={() => {
-                setIsAssessmentModalVisible(false);
-                setCurrentStep(0);
-                setAssessmentData({});
-              }}
+              style={styles.cancelButton}
+              onPress={() => setIsAssessmentModalVisible(false)}
             >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={styles.cancelButtonText}>Close</Text>
             </TouchableOpacity>
-          </View>
+          </LinearGradient>
         </View>
       </Modal>
     </ScrollView>
@@ -355,173 +315,192 @@ const RiskAssessment = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    backgroundColor: "#F8F9FA",
+  },
+  contentContainer: {
+    padding: 16,
   },
   header: {
+    padding: 24,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
     alignItems: "center",
-    marginTop: 10,
-    marginBottom: 10,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: COLORS.primary,
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#FF6B6B",
+    marginTop: 8,
   },
-  assessmentButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.primary,
-    paddingVertical: 12,
-    borderRadius: SIZES.borderRadius,
-    marginBottom: 15,
-  },
-  assessmentButtonText: {
-    color: COLORS.background,
+  headerSubtitle: {
     fontSize: 16,
-    fontWeight: "bold",
-    marginLeft: 8,
-  },
-  riskCard: {
-    backgroundColor: COLORS.secondary,
-    borderRadius: SIZES.borderRadius,
-    padding: 15,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 4,
-  },
-  riskCardContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  progressContainer: {
-    marginRight: 15,
-  },
-  riskDetails: {
-    flex: 1,
-  },
-  riskDetailLabel: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
-  },
-  riskDetailText: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.primary,
-  },
-  riskPercentage: {
-    fontSize: 16,
-    color: COLORS.textPrimary,
+    color: "#666",
     marginTop: 4,
   },
   section: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.primary,
-    marginBottom: 10,
-  },
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: COLORS.background,
-    padding: 15,
-    borderRadius: SIZES.borderRadius,
+    fontWeight: "600",
+    color: "#FF6B6B",
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: COLORS.secondary,
   },
-  cardText: {
+  riskCard: {
+    flexDirection: "row",
+    backgroundColor: "#FFF",
+    borderRadius: 16,
+    padding: 16,
+    elevation: 3,
+    alignItems: "center",
+  },
+  riskInfo: {
     flex: 1,
-    fontSize: 16,
-    color: COLORS.textPrimary,
-    marginLeft: 10,
+    marginLeft: 16,
   },
-  clinicInfo: {
-    flex: 1,
-  },
-  clinicName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: COLORS.primary,
-  },
-  clinicDetails: {
+  riskLabel: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: "#999",
+  },
+  riskLevel: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#FF6B6B",
     marginTop: 4,
   },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
+  riskScore: {
+    fontSize: 16,
+    color: "#333",
+    marginTop: 4,
+  },
+  assessmentButton: {
+    borderRadius: 12,
+    overflow: "hidden",
+    marginBottom: 20,
+  },
+  buttonGradient: {
+    flexDirection: "row",
+    padding: 14,
     alignItems: "center",
+    justifyContent: "center",
+  },
+  buttonIcon: {
+    marginRight: 8,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFF",
+  },
+  recCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    elevation: 2,
+  },
+  recText: {
+    fontSize: 15,
+    color: "#555",
+    marginLeft: 10,
+    flex: 1,
+  },
+  modalOverlay: {
+    flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    padding: 20,
   },
   modalContent: {
-    backgroundColor: COLORS.background,
+    borderRadius: 20,
     padding: 20,
-    borderRadius: SIZES.borderRadius,
-    width: "90%",
+    maxHeight: "80%",
   },
   modalTitle: {
     fontSize: 22,
-    fontWeight: "bold",
-    color: COLORS.primary,
-    marginBottom: 16,
+    fontWeight: "600",
+    color: "#FF6B6B",
     textAlign: "center",
+    marginBottom: 16,
   },
-  modalText: {
-    fontSize: 16,
-    color: COLORS.textPrimary,
-    marginBottom: 10,
+  optionsContainer: {
+    maxHeight: 300,
   },
   optionButton: {
+    backgroundColor: "#FFF",
+    borderRadius: 12,
     padding: 14,
-    backgroundColor: COLORS.secondary,
-    borderRadius: SIZES.borderRadius,
     marginBottom: 10,
+    elevation: 1,
   },
-  optionButtonSelected: {
-    backgroundColor: COLORS.primary,
+  optionSelected: {
+    backgroundColor: "#FF6B6B",
   },
   optionText: {
     fontSize: 16,
-    color: COLORS.textPrimary,
+    color: "#333",
+    textAlign: "center",
+  },
+  optionSelectedText: {
+    color: "#FFF",
   },
   nextButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: "#FF6B6B",
+    borderRadius: 12,
     padding: 14,
-    borderRadius: SIZES.borderRadius,
     alignItems: "center",
-    marginVertical: 10,
+    marginTop: 12,
+  },
+  nextButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFF",
+  },
+  summaryContainer: {
+    maxHeight: 300,
+    marginBottom: 12,
+  },
+  summaryText: {
+    fontSize: 14,
+    color: "#555",
+    marginBottom: 8,
   },
   submitButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: "#FF6B6B",
+    borderRadius: 12,
     padding: 14,
-    borderRadius: SIZES.borderRadius,
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 12,
   },
-  button: {
-    padding: 14,
-    borderRadius: SIZES.borderRadius,
-    alignItems: "center",
-    marginTop: 10,
+  submitButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFF",
   },
   cancelButton: {
-    backgroundColor: COLORS.secondary,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#FF6B6B",
+    marginTop: 8,
   },
-  buttonText: {
-    color: COLORS.background,
-    fontWeight: "bold",
+  cancelButtonText: {
     fontSize: 16,
+    color: "#FF6B6B",
+    fontWeight: "500",
+  },
+  questionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  typingIndicator: {
+    fontSize: 24,
+    color: '#FF6B6B',
+    marginLeft: 5,
   },
 });
 

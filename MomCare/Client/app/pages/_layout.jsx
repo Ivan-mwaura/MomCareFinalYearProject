@@ -7,7 +7,8 @@ import ProtectedRoute from "../ProtectedRoute";
 
 const PagesLayout = () => {
   return (
-    <>
+    <ProtectedRoute>
+
       <Navbar />
       <Provider store={store}>
         <Stack
@@ -17,7 +18,7 @@ const PagesLayout = () => {
           }}
         />
       </Provider>
-    </>
+    </ProtectedRoute>
   );
 };
 

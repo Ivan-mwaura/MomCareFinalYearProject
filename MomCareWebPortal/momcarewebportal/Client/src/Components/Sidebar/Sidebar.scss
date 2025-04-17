@@ -3,6 +3,7 @@
 
 .sidebar {
   width: $sidebar-width;
+  height: fit-content;
   background-color: $secondary;
   color: $text-primary;
   display: flex;

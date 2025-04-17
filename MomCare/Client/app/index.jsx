@@ -5,118 +5,110 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
-  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { COLORS, SIZES } from "../app/styles/theme";
 
 const Index = () => {
   const router = useRouter();
 
   return (
-    <View style={styles.container}>
+    <LinearGradient colors={["#FFF5F7", "#FFE4E6"]} style={styles.container}>
       {/* Logo */}
       <Image
         source={require("../assets/mom-care-logo.png")}
         style={styles.logo}
       />
 
-      {/* Title and Subtitle */}
-      <Text style={styles.title}>Welcome to MomCare</Text>
+      {/* Welcome Text */}
+      <Text style={styles.title}>Mama’s Haven</Text>
       <Text style={styles.subtitle}>
-        Supporting mothers every step of the way with care and confidence.
+        A warm embrace for every step of your journey.
       </Text>
 
-      {/* Primary Button */}
+      {/* Get Started Button */}
       <TouchableOpacity
-        style={styles.buttonPrimaryWrapper}
+        style={styles.primaryButton}
         onPress={() => router.push("/auth/signup")}
       >
-        <LinearGradient
-          colors={[COLORS.primary, COLORS.accent]}
-          style={styles.buttonPrimary}
-        >
-          <Text style={styles.buttonPrimaryText}>Get Started</Text>
+        <LinearGradient colors={["#FF6B6B", "#FF8787"]} style={styles.buttonGradient}>
+          <Ionicons name="heart" size={20} color="#FFF" style={styles.buttonIcon} />
+          <Text style={styles.buttonText}>Join the Circle</Text>
         </LinearGradient>
       </TouchableOpacity>
 
-      {/* Secondary Button */}
+      {/* Login Link */}
       <TouchableOpacity
-        style={styles.buttonSecondary}
+        style={styles.secondaryButton}
         onPress={() => router.push("/auth/login")}
       >
-        <Text style={styles.buttonSecondaryText}>
-          Already have an account? Login
+        <Text style={styles.secondaryText}>
+          Already with us? <Text style={styles.secondaryHighlight}>Come In</Text>
         </Text>
       </TouchableOpacity>
-    </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: SIZES.padding,
+    paddingHorizontal: 24,
+    paddingVertical: 40,
   },
   logo: {
-    width: 150,
-    height: 150,
-    marginBottom: 30,
+    width: 140,
+    height: 140,
+    marginBottom: 48,
   },
   title: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: "700",
-    color: COLORS.textPrimary,
-    marginBottom: 10,
+    color: "#FF6B6B",
+    marginBottom: 16,
     textAlign: "center",
-    letterSpacing: 1.2,
   },
   subtitle: {
     fontSize: 18,
-    color: COLORS.textSecondary,
-    marginBottom: 40,
+    color: "#666",
     textAlign: "center",
-    lineHeight: 24,
-    paddingHorizontal: 20,
+    marginBottom: 56,
+    lineHeight: 26,
   },
-  buttonPrimaryWrapper: {
-    width: "80%",
-    borderRadius: SIZES.borderRadius,
-    overflow: "hidden", // Ensures gradient stays within button bounds
-    marginBottom: 15,
+  primaryButton: {
+    width: "100%",
+    borderRadius: 12,
+    overflow: "hidden",
+    marginBottom: 24,
+    elevation: 3,
   },
-  buttonPrimary: {
-    paddingVertical: 15,
+  buttonGradient: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: Platform.OS === "android" ? 5 : 0,
+    padding: 16,
   },
-  buttonPrimaryText: {
-    color: COLORS.background,
-    fontWeight: "bold",
-    fontSize: 16,
+  buttonIcon: {
+    marginRight: 12,
   },
-  buttonSecondary: {
-    borderColor: COLORS.accent,
-    borderWidth: 1.5,
+  buttonText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#FFF",
+  },
+  secondaryButton: {
     paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: SIZES.borderRadius,
-    width: "80%",
-    alignItems: "center",
   },
-  buttonSecondaryText: {
-    color: COLORS.accent,
-    fontWeight: "bold",
-    fontSize: 14,
+  secondaryText: {
+    fontSize: 16,
+    color: "#777",
+  },
+  secondaryHighlight: {
+    color: "#FF6B6B",
+    fontWeight: "600",
   },
 });
 

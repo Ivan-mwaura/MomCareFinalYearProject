@@ -42,7 +42,15 @@ const User = sequelize.define('User', {
   motherId: {
     type: DataTypes.UUID,
     allowNull: true  // Only set when role === 'mother'
-  }
+  },
+  fcmToken: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  expoPushToken: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
 }, {
   tableName: 'users',
   timestamps: true,
