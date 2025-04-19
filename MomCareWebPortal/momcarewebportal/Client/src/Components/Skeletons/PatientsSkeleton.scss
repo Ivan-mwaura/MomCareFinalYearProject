@@ -1,0 +1,160 @@
+@use "../../Components/styles/variables" as vars;
+@use "../../Components/styles/mixins" as *;
+@use "sass:math";
+
+.patients-skeleton {
+  padding: vars.$padding;
+  background-color: vars.$background;
+}
+
+// Shimmer animation
+@keyframes shimmer {
+  0% {
+    background-position: -468px 0;
+  }
+  100% {
+    background-position: 468px 0;
+  }
+}
+
+.skeleton-title,
+.skeleton-register-btn,
+.skeleton-filter,
+.skeleton-list-title,
+.skeleton-header,
+.skeleton-cell,
+.skeleton-pagination-btn,
+.skeleton-pagination-text {
+  background: linear-gradient(
+    90deg,
+    #FFE6EB 25%, // vars.$secondary
+    lighten(#FF6B8A, 10%) 50%, // lighten(vars.$accent, 10%)
+    #FFE6EB 75% // vars.$secondary
+  );
+  background-size: 936px 100%;
+  animation: shimmer 2.5s infinite linear;
+  border-radius: vars.$border-radius;
+}
+
+.skeleton-title {
+  width: 200px;
+  height: 28px;
+  margin: 0 auto vars.$padding auto;
+}
+
+.skeleton-register-btn {
+  width: 150px;
+  height: 40px;
+  margin-bottom: vars.$padding;
+}
+
+.filters {
+  display: flex;
+  justify-content: space-between;
+  gap: vars.$padding;
+  margin-bottom: vars.$padding;
+
+  .skeleton-filter {
+    flex: 1;
+    height: 40px;
+  }
+
+  @include mobile {
+    flex-direction: column;
+    gap: 10px;
+
+    .skeleton-filter {
+      width: 100%;
+    }
+  }
+}
+
+.patient-list {
+  margin-top: vars.$padding;
+
+  .skeleton-list-title {
+    width: 150px;
+    height: 24px;
+    margin-bottom: vars.$padding;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th,
+    td {
+      padding: math.div(vars.$padding, 2);
+      border: 1px solid vars.$accent;
+    }
+
+    th {
+      .skeleton-header {
+        width: 80%;
+        height: 16px;
+        margin: 0 auto;
+      }
+    }
+
+    td {
+      .skeleton-cell {
+        width: 80%;
+        height: 16px;
+        margin: 0 auto;
+      }
+    }
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+
+    .skeleton-pagination-btn {
+      width: 80px;
+      height: 32px;
+    }
+
+    .skeleton-pagination-text {
+      width: 100px;
+      height: 20px;
+    }
+  }
+
+  @include tablet {
+    table {
+      font-size: 12px;
+
+      th,
+      td {
+        padding: math.div(vars.$padding, 3);
+      }
+    }
+  }
+}
+
+@include mobile {
+  .patients-skeleton {
+    padding: math.div(vars.$padding, 2);
+  }
+
+  .filters {
+    gap: 10px;
+
+    .skeleton-filter {
+      width: 100%;
+    }
+  }
+
+  .patient-list {
+    table {
+      font-size: 12px;
+
+      th,
+      td {
+        padding: math.div(vars.$padding, 3);
+      }
+    }
+  }
+}

@@ -1,14 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
-import Cookies from 'js-cookie';
+import axiosInstance from '../utils/axiosConfig';
 
 export const fetchNotifications = createAsyncThunk(
   'notifications/fetchNotifications',
   async () => {
-    const token = Cookies.get("token");
-    const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/notifications`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const response = await axiosInstance.get('/notifications');
     // Notifications are returned as a direct array, not nested under data property
     return Array.isArray(response.data) ? response.data : [];
   }

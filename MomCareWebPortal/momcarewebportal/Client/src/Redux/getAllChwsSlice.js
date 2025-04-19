@@ -1,15 +1,11 @@
 // In your CHW Redux slice (getAllChwsSlice.js)
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
-import Cookies from 'js-cookie';
+import axiosInstance from '../utils/axiosConfig';
 
 export const fetchCHWs = createAsyncThunk(
   'chws/fetchCHWs',
   async () => {
-    const token = Cookies.get("token");
-    const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/chws`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const response = await axiosInstance.get('/chws');
     return response.data.data;
   }
 );

@@ -1,15 +1,11 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
-import Cookies from 'js-cookie';
+import axiosInstance from '../utils/axiosConfig';
 
 // Async thunk to fetch appointments from the backend
 export const fetchAppointments = createAsyncThunk(
   'appointments/fetchAppointments',
   async () => {
-    const token = Cookies.get("token");
-    const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/appointments`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const response = await axiosInstance.get('/appointments');
     // Assuming the API returns { data: [ ... ] }
     return response.data.data;
   }

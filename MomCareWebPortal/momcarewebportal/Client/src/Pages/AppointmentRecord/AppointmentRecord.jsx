@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axios from "../../utils/axiosConfig";
 import "./AppointmentRecord.scss";
 import { useToast } from "../../Components/ui/use-toast";
 import Cookies from "js-cookie";
+import AppointmentRecordSkeleton from "../../Components/Skeletons/AppointmentRecordSkeleton";
 
 const AppointmentRecord = () => {
   const { toast } = useToast();
@@ -203,6 +204,10 @@ const AppointmentRecord = () => {
     { id: "followUp", label: "Follow-Up", icon: "📅" },
     { id: "notes", label: "Notes", icon: "📝" }
   ];
+
+  if (loading) {
+    return <AppointmentRecordSkeleton />;
+  }
 
   return (
     <div className="appointment-record-page">

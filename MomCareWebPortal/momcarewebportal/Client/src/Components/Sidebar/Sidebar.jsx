@@ -100,7 +100,7 @@ const Sidebar = () => {
               Doctor Management
             </NavLink>
           </li>
-          <li>
+          {/*<li>
             <NavLink
               to="/resources"
               className={({ isActive }) =>
@@ -129,7 +129,7 @@ const Sidebar = () => {
             >
               Support
             </NavLink>
-          </li>
+          </li>*/}
         </ul>
       </nav>
     </div>

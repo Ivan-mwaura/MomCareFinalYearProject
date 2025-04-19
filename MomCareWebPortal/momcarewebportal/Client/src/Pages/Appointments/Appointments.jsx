@@ -1,12 +1,11 @@
 // src/Pages/Appointments/Appointments.jsx
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import "./Appointments.scss";
-import {  Skeleton } from "@mui/material";
 import { useToast } from "../../Components/ui/use-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAppointments } from "../../Redux/getAllAppointmentsSlice";
-import Cookies from "js-cookie";
-import axios from "axios";
+import axios from "../../utils/axiosConfig";
+import AppointmentsSkeleton from "../../Components/Skeletons/AppointmentsSkeleton";
 
 const Appointments = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -22,7 +21,6 @@ const Appointments = () => {
   const appointmentsPerPage = 10;
   const dispatch = useDispatch();
   const { toast } = useToast();
-  const token = Cookies.get("token");
 
   // Get appointments from Redux store
   const { data: appointments, loading: appointmentsLoading } = useSelector(
@@ -31,7 +29,11 @@ const Appointments = () => {
 
   useEffect(() => {
     dispatch(fetchAppointments());
-  }, [dispatch, token]);
+  }, [dispatch]);
+
+  if (appointmentsLoading) {
+    return <AppointmentsSkeleton />;
+  }
 
   // Apply filters on appointments
   const filteredAppointments = appointments
@@ -76,18 +78,16 @@ const Appointments = () => {
   // Approve appointment via backend PUT request
   const handleApproveAppointment = async (appointmentId) => {
     try {
-      await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/appointments/${appointmentId}`,
-        { status: "Approved" },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast({ title: "Success", description: "Appointment approved." });
+      await axios.put(`/appointments/${appointmentId}/approve`);
       dispatch(fetchAppointments());
-    } catch (error) {
       toast({
-        title: "Error",
-        description:
-          error.response?.data?.message || "Error approving appointment.",
+        title: "✅ Success",
+        description: "Appointment approved successfully."
+      });
+    } catch {
+      toast({
+        title: "❌ Error",
+        description: "Failed to approve appointment."
       });
     }
   };
@@ -99,19 +99,20 @@ const Appointments = () => {
 
   const handleConfirmReschedule = async (newDate, newTime) => {
     try {
-      await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/appointments/${reschedulingAppointment.id}`,
-        { date: newDate, time: newTime },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast({ title: "Success", description: "Appointment rescheduled." });
+      await axios.put(`/appointments/${reschedulingAppointment.id}/reschedule`, {
+        date: newDate,
+        time: newTime
+      });
       dispatch(fetchAppointments());
       setReschedulingAppointment(null);
-    } catch (error) {
       toast({
-        title: "Error",
-        description:
-          error.response?.data?.message || "Error rescheduling appointment.",
+        title: "✅ Success",
+        description: "Appointment rescheduled successfully."
+      });
+    } catch {
+      toast({
+        title: "❌ Error",
+        description: "Failed to reschedule appointment."
       });
     }
   };
@@ -128,18 +129,17 @@ const Appointments = () => {
 
   const handleConfirmCancel = async () => {
     try {
-      await axios.delete(
-        `${import.meta.env.VITE_BACKEND_URL}/appointments/${cancelingAppointment.id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast({ title: "Success", description: "Appointment canceled." });
+      await axios.put(`/appointments/${cancelingAppointment.id}/cancel`);
       dispatch(fetchAppointments());
       setCancelingAppointment(null);
-    } catch (error) {
       toast({
-        title: "Error",
-        description:
-          error.response?.data?.message || "Error canceling appointment.",
+        title: "✅ Success",
+        description: "Appointment cancelled successfully."
+      });
+    } catch {
+      toast({
+        title: "❌ Error",
+        description: "Failed to cancel appointment."
       });
     }
   };
@@ -185,64 +185,56 @@ const Appointments = () => {
       {/* Appointments List */}
       <div className="appointments-list">
         <h2>Scheduled Appointments</h2>
-        {appointmentsLoading ? (
-          <div className="loading-placeholder">
-            {Array.from({ length: appointmentsPerPage }).map((_, index) => (
-              <Skeleton key={index} variant="rectangular" height={50} style={{ marginBottom: 10 }} />
-            ))}
-          </div>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Mother</th>
-                <th>Provider</th>
-                <th>Type</th>
-                <th>Location</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Description</th>
-                <th>Status</th>
-                <th>Actions</th>
+        <table>
+          <thead>
+            <tr>
+              <th>Mother</th>
+              <th>Provider</th>
+              <th>Type</th>
+              <th>Location</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Description</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {displayedAppointments.map((appointment) => (
+              <tr key={appointment.id}>
+                <td>{appointment.motherName}</td>
+                <td>{appointment.provider}</td>
+                <td style={{width:'200px'}}>{appointment.type}</td>
+                <td>{appointment.location}</td>
+                <td>{appointment.date}</td>
+                <td>{appointment.time}</td>
+                <td className="description-cell" title={appointment.description}>{appointment.description}</td>
+                <td>{appointment.status}</td>
+                <td>
+                  <div className="actions">
+                    <button onClick={() => handleViewAppointment(appointment)}>
+                      View
+                    </button>
+                    {appointment.status === "Pending" && (
+                      <button onClick={() => handleApproveAppointment(appointment.id)}>
+                        Approve
+                      </button>
+                    )}
+                    <button onClick={() => handleRescheduleAppointment(appointment)}>
+                      Reschedule
+                    </button>
+                    <button onClick={() => handleCancelAppointment(appointment)}>
+                      Cancel
+                    </button>
+                    <button onClick={() => setViewingDescription(appointment)}>
+                      View Details
+                    </button>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {displayedAppointments.map((appointment) => (
-                <tr key={appointment.id}>
-                  <td>{appointment.motherName}</td>
-                  <td>{appointment.provider}</td>
-                  <td style={{width:'200px'}}>{appointment.type}</td>
-                  <td>{appointment.location}</td>
-                  <td>{appointment.date}</td>
-                  <td>{appointment.time}</td>
-                  <td className="description-cell" title={appointment.description}>{appointment.description}</td>
-                  <td>{appointment.status}</td>
-                  <td>
-                    <div className="actions">
-                      <button onClick={() => handleViewAppointment(appointment)}>
-                        View
-                      </button>
-                      {appointment.status === "Pending" && (
-                        <button onClick={() => handleApproveAppointment(appointment.id)}>
-                          Approve
-                        </button>
-                      )}
-                      <button onClick={() => handleRescheduleAppointment(appointment)}>
-                        Reschedule
-                      </button>
-                      <button onClick={() => handleCancelAppointment(appointment)}>
-                        Cancel
-                      </button>
-                      <button onClick={() => setViewingDescription(appointment)}>
-                        View Details
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {/* Pagination */}

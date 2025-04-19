@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "../../Components/ui/use-toast";
 import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
@@ -10,6 +10,14 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if there's a redirect path stored
+    const redirectPath = localStorage.getItem('redirectPath');
+    if (redirectPath) {
+      localStorage.removeItem('redirectPath');
+    }
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -38,17 +46,17 @@ const LoginPage = () => {
         description: `Welcome back, ${data.user.firstName}!`,
       });
 
-      //clear cookies
-
-
-
-      // Navigate to the dashboard after successful login
-      navigate("/");
+      // Get the redirect path or default to dashboard
+      const redirectPath = localStorage.getItem('redirectPath') || '/';
+      localStorage.removeItem('redirectPath');
+      
+      // Navigate to the stored path or dashboard
+      navigate(redirectPath);
     } catch (error) {
       console.error("Login error:", error);
       toast({
         title: "❌ Login Error",
-        description: "An unexpected error occurred. Please try again later.", error,
+        description: "An unexpected error occurred. Please try again later.",
       });
     }
   };

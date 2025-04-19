@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axios from "../../utils/axiosConfig";
 import "./HealthRecords.scss";
 import { useToast } from "../../Components/ui/use-toast";
 import Cookies from "js-cookie";
+import HealthRecordsSkeleton from "../../Components/Skeletons/HealthRecordsSkeleton";
 
 const HealthRecords = () => {
   const { toast } = useToast();
@@ -38,7 +39,7 @@ const HealthRecords = () => {
         setLoading(true);
         axios
           .get(
-            `http://localhost:5000/api/mothers/search?search=${encodeURIComponent(searchQuery)}`,
+            `${import.meta.env.VITE_BACKEND_URL}/mothers/search?search=${encodeURIComponent(searchQuery)}`,
             {
               headers: { Authorization: `Bearer ${Cookies.get("token")}` }
             }
@@ -151,6 +152,10 @@ const HealthRecords = () => {
     { id: "obstetric", label: "Obstetric History", icon: "🤰" }
   ];
 
+  if (loading) {
+    return <HealthRecordsSkeleton />;
+  }
+
   return (
     <div className="health-records-page">
       <header className="page-header">
@@ -193,7 +198,7 @@ const HealthRecords = () => {
               <div className="tip-card">
                 <span className="tip-icon">📋</span>
                 <h3>Quick Start</h3>
-                <p>Enter a mother’s name or email to begin recording her health journey.</p>
+                <p>Enter a mother&apos;s name or email to begin recording her health journey.</p>
               </div>
               <div className="tip-card">
                 <span className="tip-icon">🕒</span>
@@ -424,9 +429,9 @@ const HealthRecords = () => {
                 </div>
               </div>
               <div className="notes-section">
-                <h3>Doctor’s Notes</h3>
+                <h3>Doctor&apos;s Notes</h3>
                 <p>
-                  You mentioned mild fatigue last visit. We recommend more hydration and a follow-up in 2 weeks. We’re watching for gestational diabetes due to your family history—stay strong!
+                  You mentioned mild fatigue last visit. We recommend more hydration and a follow-up in 2 weeks. We&apos;re watching for gestational diabetes due to your family history—stay strong!
                 </p>
               </div>
             </div>

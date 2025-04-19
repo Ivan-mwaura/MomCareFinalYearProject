@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import "./Alerts.scss";
-import { CircularProgress, Skeleton } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAlerts } from "../../Redux/getAllAlertsSlice";
 import { fetchNotifications } from "../../Redux/getAllNotificationsSlice";
-import Cookies from "js-cookie";
+import AlertsSkeleton from "../../Components/Skeletons/AlertsSkeleton";
 
 const Alerts = () => {
   const [tab, setTab] = useState("alerts");
@@ -62,6 +61,10 @@ const Alerts = () => {
     currentPage * alertsPerPage
   );
 
+  if (alertsLoading || notificationsLoading) {
+    return <AlertsSkeleton />;
+  }
+
   return (
     <div className="alerts">
       <h1>Alerts and Notifications</h1>
@@ -86,13 +89,7 @@ const Alerts = () => {
       {tab === "alerts" && (
         <div className="alerts-list">
           <h2>Urgent Alerts</h2>
-          {alertsLoading ? (
-            <>
-              {Array.from({ length: alertsPerPage }).map((_, index) => (
-                <Skeleton key={index} variant="rectangular" height={40} style={{ marginBottom: 10 }} />
-              ))}
-            </>
-          ) : paginatedAlerts.length === 0 ? (
+          {paginatedAlerts.length === 0 ? (
             <p>No alerts available.</p>
           ) : (
             <>
@@ -138,13 +135,7 @@ const Alerts = () => {
       {tab === "notifications" && (
         <div className="notifications-list">
           <h2>General Notifications</h2>
-          {notificationsLoading ? (
-            <>
-              {Array.from({ length: 2 }).map((_, index) => (
-                <Skeleton key={index} variant="rectangular" height={50} style={{ marginBottom: 10 }} />
-              ))}
-            </>
-          ) : notifications.length === 0 ? (
+          {notifications.length === 0 ? (
             <p>No notifications available.</p>
           ) : (
             <ul>

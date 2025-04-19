@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { Bar, Line, Pie } from "react-chartjs-2";
+import { useState, useEffect } from "react";
+import { Bar, Pie } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
-  LineElement,
   BarElement,
   Title,
   Tooltip,
@@ -13,20 +12,20 @@ import {
   ArcElement,
 } from "chart.js";
 import "./Analytics.scss";
-import axios from "axios";
+import axios from "../../utils/axiosConfig";
 import Cookies from "js-cookie";
 import { saveAs } from 'file-saver';
+import AnalyticsSkeleton from "../../Components/Skeletons/AnalyticsSkeleton";
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
   PointElement,
-  LineElement,
   BarElement,
-  ArcElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  ArcElement,
 );
 
 const Analytics = () => {
@@ -43,17 +42,20 @@ const Analytics = () => {
 
   const fetchAnalytics = async () => {
     try {
+      setLoading(true);
       const params = new URLSearchParams();
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
 
       const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/analytics?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
       setAnalyticsData(response.data);
-      setLoading(false);
     } catch (error) {
       console.error("Error fetching analytics:", error);
+    } finally {
       setLoading(false);
     }
   };
@@ -93,7 +95,7 @@ const Analytics = () => {
   };
 
   if (loading) {
-    return <div className="loading">Loading analytics data...</div>;
+    return <AnalyticsSkeleton />;
   }
 
   if (!analyticsData) {

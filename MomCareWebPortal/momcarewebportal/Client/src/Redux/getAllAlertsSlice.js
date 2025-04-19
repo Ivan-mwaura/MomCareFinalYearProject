@@ -1,14 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
-import Cookies from 'js-cookie';
+import axiosInstance from '../utils/axiosConfig';
 
 export const fetchAlerts = createAsyncThunk(
   'alerts/fetchAlerts',
   async () => {
-    const token = Cookies.get("token");
-    const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/alerts`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const response = await axiosInstance.get('/alerts');
     // Make sure we handle both possible response structures
     if (response.data && response.data.data && Array.isArray(response.data.data)) {
       return response.data.data;

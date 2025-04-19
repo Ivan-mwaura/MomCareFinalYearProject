@@ -3,6 +3,7 @@ import axios from "axios";
 import "./Doctors.scss";
 import { useToast } from "../../Components/ui/use-toast";
 import Cookies from "js-cookie";
+import DoctorsSkeleton from "../../Components/Skeletons/DoctorsSkeleton"; // Import the skeleton
 
 const INITIAL_DOCTOR_STATE = {
   firstName: "",
@@ -24,12 +25,14 @@ const Doctors = () => {
   const [editingDoctor, setEditingDoctor] = useState(null);
   const [viewingDoctor, setViewingDoctor] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true); // Add loading state
   const { toast } = useToast();
   const [newDoctor, setNewDoctor] = useState(INITIAL_DOCTOR_STATE);
 
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
+        setLoading(true); // Set loading to true
         const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/doctors`, {
             headers: {
                 Authorization: `Bearer ${Cookies.get("token")}`
@@ -41,6 +44,8 @@ const Doctors = () => {
           title: "❌ Error",
           description: "Failed to fetch doctors."
         });
+      } finally {
+        setLoading(false); // Set loading to false
       }
     };
 
@@ -146,6 +151,10 @@ const Doctors = () => {
   const handlePreviousPage = useCallback(() => {
     if (currentPage > 1) setCurrentPage((prev) => prev - 1);
   }, [currentPage]);
+
+  if (loading) {
+    return <DoctorsSkeleton />;
+  }
 
   return (
     <div className="doctor-management">

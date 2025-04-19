@@ -3,6 +3,7 @@ import { Line, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import DashboardSkeleton from '../../Components/Skeletons/DashboardSkeleton';
 import './Dashboard.scss';
 
 // Register required components for Chart.js
@@ -68,7 +69,7 @@ const Dashboard = () => {
   };
 
   if (loading) {
-    return <div className="dashboard-loading">Loading dashboard data...</div>;
+    return <DashboardSkeleton />;
   }
 
   if (error) {
@@ -176,19 +177,19 @@ const Dashboard = () => {
       </div>
 
       <div className="dashboard-cards">
-        <div className="dashboard-card">
+        <div className="card">
           <h3>Total Mothers</h3>
           <p>{dashboardData.totalMothers}</p>
         </div>
-        <div className="dashboard-card">
+        <div className="card">
           <h3>High Risk Cases</h3>
           <p>{dashboardData.highRiskCases}</p>
         </div>
-        <div className="dashboard-card">
+        <div className="card">
           <h3>Upcoming Appointments</h3>
           <p>{dashboardData.upcomingAppointments}</p>
         </div>
-        <div className="dashboard-card">
+        <div className="card">
           <h3>Active CHWs</h3>
           <p>{dashboardData.activeCHWs}</p>
         </div>

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import axios from "axios";
+import axios from "../../utils/axiosConfig";
 import locationData from './Kenya_Counties_Constituencies_Wards.json';
 import "./CHWs.scss";
 import { useToast } from "../../Components/ui/use-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCHWs } from "../../Redux/getAllChwsSlice";
+import CHWsSkeleton from "../../Components/Skeletons/CHWsSkeleton";
 
 const INITIAL_CHW_STATE = {
   firstName: "",
@@ -149,6 +150,10 @@ const CHWs = () => {
   const handlePreviousPage = useCallback(() => {
     if (currentPage > 1) setCurrentPage((prev) => prev - 1);
   }, [currentPage]);
+
+  if (chwsLoading) {
+    return <CHWsSkeleton />;
+  }
 
   return (
     <div className="chw-management">

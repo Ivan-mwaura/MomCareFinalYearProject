@@ -8,6 +8,7 @@ import { fetchMothers } from "../../Redux/getAllMothersSlice";
 import { fetchCHWs } from "../../Redux/getAllChwsSlice";
 import Cookies from "js-cookie";
 import locationData from "./Kenya_Counties_Constituencies_Wards.json";
+import PatientsSkeleton from "../../Components/Skeletons/PatientsSkeleton"; // Import the skeleton
 
 const Patients = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -169,10 +170,7 @@ const Patients = () => {
   return (
     <>
       {mothersLoading || chwsLoading ? (
-        // Skeleton placeholder for the whole Patients page while loading
-        <div className="loading-overlay">
-          <Skeleton variant="rectangular" width="100%" height={400} />
-        </div>
+        <PatientsSkeleton />
       ) : (
         <div className="patients">
           <h1>Patient Management</h1>
@@ -371,7 +369,7 @@ const Patients = () => {
                         />
                       </label>
                       <label>
-                        Assigned CHW:
+                        Assigned Vaughn:
                         <select
                           name="chwId"
                           value={newMother.chwId}
@@ -494,7 +492,7 @@ const Patients = () => {
           {viewingPatient && (
             <div className="modal">
               <div className="modal-content">
-                <h2>{viewingPatient.firstName}&apos;s Profile</h2>
+                <h2>{viewingPatient.firstName}'s Profile</h2>
                 <p><strong>Risk Level:</strong> {viewingPatient.risk || "High"}</p>
                 <p><strong>Location:</strong> {viewingPatient.ward}</p>
                 <p><strong>Pregnancy Stage:</strong> {viewingPatient.pregnancyStage}</p>

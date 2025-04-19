@@ -1,15 +1,11 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
-import Cookies from 'js-cookie';
+import axiosInstance from '../utils/axiosConfig';
 
 // Async thunk to fetch mothers' data from the API with token authentication
 export const fetchMothers = createAsyncThunk(
   'mothers/fetchMothers',
   async () => {
-    const token = Cookies.get("token");
-    const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/mothers`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const response = await axiosInstance.get('/mothers');
     // Assuming the backend returns { data: [ ... ] }
     return response.data.data;
   }
