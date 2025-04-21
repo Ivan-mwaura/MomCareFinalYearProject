@@ -33,18 +33,22 @@ const Appointments = () => {
       
       const user = JSON.parse(userData);
       const motherId = user.motherId || user.id;
+      console.log(motherId);
 
       const response = await axios.get(`${BACKEND_URL}/api/appointments/mother/${motherId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setAppointments(response.data.data);
     } catch (error) {
-      console.error("Error fetching appointments:", error.message);
+      console.log("Error fetching appointments:", error); 
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
+
+  console.log(appointments);
+  
 
   useEffect(() => {
     fetchAppointmentsData();

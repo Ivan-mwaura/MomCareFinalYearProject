@@ -5,6 +5,7 @@ const { protect } = require('../middlewares/authMiddleware');
 
 router.post('/', protect, appointmentController.createAppointment);
 router.get('/', protect, appointmentController.getAppointments);
+router.get('/mother/:motherId', protect, appointmentController.getAppointmentsByMotherId);
 router.get('/:id', protect, appointmentController.getAppointmentById);
 router.put('/:id', protect, appointmentController.updateAppointment);
 router.delete('/:id', protect, appointmentController.deleteAppointment);

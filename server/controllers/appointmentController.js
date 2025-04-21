@@ -87,3 +87,34 @@ exports.deleteAppointment = async (req, res) => {
     res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
+
+exports.getAppointmentsByMotherId = async (req, res) => {
+  try {
+    const appointments = await Appointment.findAll({
+      where: { motherId: req.params.motherId },
+      include: [{
+        model: Mother,
+        as: 'mother',
+        attributes: ['firstName', 'lastName']
+      }],
+      order: [['createdAt', 'DESC']] // Most recent first
+    });
+
+    if (!appointments.length) {
+      return res.status(200).json({ data: [] }); // Return empty array instead of 404
+    }
+
+    // Map the appointments to include a combined motherName field
+    const formattedAppointments = appointments.map((appointment) => {
+      const a = appointment.toJSON();
+      a.motherName = a.mother ? `${a.mother.firstName} ${a.mother.lastName}` : null;
+      delete a.mother;
+      return a;
+    });
+
+    res.json({ data: formattedAppointments });
+  } catch (error) {
+    console.error("Error in getAppointmentsByMotherId:", error);
+    res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+};
