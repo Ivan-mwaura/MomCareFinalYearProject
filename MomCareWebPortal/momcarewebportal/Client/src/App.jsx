@@ -1,137 +1,53 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import Layout from "./Components/Layout/layout";
-import Dashboard from "./Pages/Dashboard/Dashboard";
-import Patients from "./Pages/Patients/Patients";
-import Alerts from "./Pages/Alerts/Alerts";
-import Appointments from "./Pages/Appointments/Appointments";
-import Analytics from "./Pages/Analytics/Analytics";
-import CHWs from "./Pages/CHWs/CHWs";
-import Resources from "./Pages/Resources/Resources";
-import Profile from "./Pages/Profile/Profile";
-import Support from "./Pages/Support/Support";
 import LoginPage from "./Pages/LoginPage/LoginPage";
-import PublicRoute from "./Components/PublicRoute/PublicRoute";
+import UnauthorizedPage from "./Pages/UnauthorizedPage/UnauthorizedPage";
 import ProtectedRoute from "./Components/ProtectedRoute/ProtectedRoute";
-import HealthRecords from "./Pages/HealthRecords/HealthRecords";
-import AppointmentRecord from "./Pages/AppointmentRecord/AppointmentRecord";
-import Doctors from "./Pages/Doctors/Doctors";
+import { AuthProvider } from "./context/AuthContext";
+import { useAuth } from "./context/AuthContext";
+import { routeConfig } from "./utils/routeConfig";
 import "./main.scss";
 
-const App = () => {
+const AppContent = () => {
+  const { user } = useAuth();
+
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
+  }
+
   return (
     <Layout>
       <div className="main-content">
         <Routes>
-          {/* Public route: Only accessible if not authenticated */}
-          <Route
-            path="/login"
-            element={
-              <PublicRoute>
-                <LoginPage />
-              </PublicRoute>
-            }
-          />
-          
-          {/* Protected routes: Accessible only to authenticated users */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/patients"
-            element={
-              <ProtectedRoute>
-                <Patients />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/health-records"
-            element={
-              <ProtectedRoute>
-                <HealthRecords/>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/appointment-record"
-            element={
-              <ProtectedRoute>
-                <AppointmentRecord/>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/alerts"
-            element={
-              <ProtectedRoute>
-                <Alerts />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/appointments"
-            element={
-              <ProtectedRoute>
-                <Appointments />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/analytics"
-            element={
-              <ProtectedRoute>
-                <Analytics />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/chws"
-            element={
-              <ProtectedRoute>
-                <CHWs />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/doctors"
-            element={
-              <ProtectedRoute>
-                <Doctors />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/resources"
-            element={
-              <ProtectedRoute>
-                <Resources />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/support"
-            element={
-              <ProtectedRoute>
-                <Support />
-              </ProtectedRoute>
-            }
-          />
+          {routeConfig.map(({ path, component: Component, allowedRoles }) => (
+            <Route
+              key={path}
+              path={path}
+              element={
+                <ProtectedRoute allowedRoles={allowedRoles}>
+                  <Component />
+                </ProtectedRoute>
+              }
+            />
+          ))}
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </div>
     </Layout>
+  );
+};
+
+const App = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 

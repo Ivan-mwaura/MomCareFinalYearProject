@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../db/connect');
+const bcrypt = require('bcryptjs');
 
 const Doctor = sequelize.define('Doctor', {
   id: {
@@ -20,6 +21,14 @@ const Doctor = sequelize.define('Doctor', {
     allowNull: false,
     unique: true,
     validate: { isEmail: true }
+  },
+  password: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      len: [8, 100],
+      is: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+    }
   },
   phone: {
     type: DataTypes.STRING,
@@ -49,6 +58,20 @@ const Doctor = sequelize.define('Doctor', {
 }, {
   tableName: 'doctors',
   timestamps: true,
+  hooks: {
+    beforeCreate: async (doctor) => {
+      if (doctor.password) {
+        const salt = await bcrypt.genSalt(10);
+        doctor.password = await bcrypt.hash(doctor.password, salt);
+      }
+    },
+    beforeUpdate: async (doctor) => {
+      if (doctor.changed('password')) {
+        const salt = await bcrypt.genSalt(10);
+        doctor.password = await bcrypt.hash(doctor.password, salt);
+      }
+    }
+  }
 });
 
 module.exports = Doctor;

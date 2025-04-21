@@ -1,9 +1,33 @@
 const Doctor = require('../models/Doctor');
+const bcrypt = require('bcryptjs');
+const { User } = require('../models');
 
 exports.createDoctor = async (req, res) => {
   try {
-    const doctor = await Doctor.create(req.body);
-    res.status(201).json({ doctor });
+    const { password, ...doctorData } = req.body;
+    
+    // Create Doctor record
+    const doctor = await Doctor.create(doctorData);
+    
+    // Create User account for the doctor
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      email: doctor.email,
+      password: hashedPassword,
+      role: 'doctor',
+      firstName: doctor.firstName,
+      lastName: doctor.lastName,
+      phone: doctor.phone
+    });
+    
+    // Don't send passwords in response
+    const { password: _, ...doctorWithoutPassword } = doctor.toJSON();
+    const { password: __, ...userWithoutPassword } = user.toJSON();
+    
+    res.status(201).json({ 
+      doctor: doctorWithoutPassword,
+      user: userWithoutPassword
+    });
   } catch (error) {
     console.error("Error creating doctor:", error);
     res.status(500).json({ message: "Internal server error", error: error.message });
@@ -12,7 +36,9 @@ exports.createDoctor = async (req, res) => {
 
 exports.getAllDoctors = async (req, res) => {
   try {
-    const doctors = await Doctor.findAll();
+    const doctors = await Doctor.findAll({
+      attributes: { exclude: ['password'] }
+    });
     res.json({ doctors });
   } catch (error) {
     console.error("Error fetching doctors:", error);
@@ -22,7 +48,9 @@ exports.getAllDoctors = async (req, res) => {
 
 exports.getDoctorById = async (req, res) => {
   try {
-    const doctor = await Doctor.findByPk(req.params.id);
+    const doctor = await Doctor.findByPk(req.params.id, {
+      attributes: { exclude: ['password'] }
+    });
     if (!doctor) return res.status(404).json({ message: "Doctor not found" });
     res.json({ doctor });
   } catch (error) {
@@ -33,8 +61,18 @@ exports.getDoctorById = async (req, res) => {
 
 exports.updateDoctor = async (req, res) => {
   try {
-    await Doctor.update(req.body, { where: { id: req.params.id } });
-    const updatedDoctor = await Doctor.findByPk(req.params.id);
+    const { password, ...updateData } = req.body;
+    let updateFields = { ...updateData };
+
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      updateFields.password = await bcrypt.hash(password, salt);
+    }
+
+    await Doctor.update(updateFields, { where: { id: req.params.id } });
+    const updatedDoctor = await Doctor.findByPk(req.params.id, {
+      attributes: { exclude: ['password'] }
+    });
     res.json({ doctor: updatedDoctor });
   } catch (error) {
     console.error("Error updating doctor:", error);

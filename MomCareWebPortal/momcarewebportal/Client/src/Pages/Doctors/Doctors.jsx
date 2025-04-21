@@ -10,6 +10,7 @@ const INITIAL_DOCTOR_STATE = {
   lastName: "",
   phone: "",
   email: "",
+  password: "",
   hospitalName: "",
   department: "",
   licenseNumber: "",
@@ -134,6 +135,7 @@ const Doctors = () => {
       lastName: doctor.lastName,
       phone: doctor.phone,
       email: doctor.email,
+      password: doctor.password,
       hospitalName: doctor.hospitalName,
       department: doctor.department,
       licenseNumber: doctor.licenseNumber,
@@ -292,6 +294,19 @@ const Doctors = () => {
                       value={newDoctor.email}
                       onChange={handleFormChange}
                       required
+                    />
+                  </label>
+                  <label>
+                    Password
+                    <input
+                      type="password"
+                      name="password"
+                      value={newDoctor.password}
+                      onChange={handleFormChange}
+                      required
+                      minLength="8"
+                      pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+                      title="Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character"
                     />
                   </label>
                 </div>

@@ -1,7 +1,18 @@
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { routeConfig } from "../../utils/routeConfig";
 import "./Sidebar.scss";
 
 const Sidebar = () => {
+  const { user } = useAuth();
+
+  // Filter routes based on user role and remove duplicate dashboard route
+  const allowedRoutes = routeConfig
+    .filter(route => route.allowedRoles.includes(user?.role))
+    .filter((route, index, self) => 
+      index === self.findIndex((r) => r.label === route.label)
+    );
+
   return (
     <div className="sidebar">
       <div className="sidebar-header">
@@ -10,126 +21,18 @@ const Sidebar = () => {
       </div>
       <nav>
         <ul>
-          <li>
-            <NavLink
-              to="/"
-              className={({ isActive }) =>
-                isActive ? "active-link" : ""
-              }
-            >
-              Dashboard
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/patients"
-              className={({ isActive }) =>
-                isActive ? "active-link" : ""
-              }
-            >
-              Mothers Management
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/health-records"
-              className={({ isActive }) =>
-                isActive ? "active-link" : ""
-              }
-            >
-              Health Records
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/appointment-record"
-              className={({ isActive }) =>
-                isActive ? "active-link" : ""
-              }
-            >
-              Appointment Record
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/alerts"
-              className={({ isActive }) =>
-                isActive ? "active-link" : ""
-              }
-            >
-              Alerts
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/appointments"
-              className={({ isActive }) =>
-                isActive ? "active-link" : ""
-              }
-            >
-              Appointments
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/analytics"
-              className={({ isActive }) =>
-                isActive ? "active-link" : ""
-              }
-            >
-              Analytics
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/chws"
-              className={({ isActive }) =>
-                isActive ? "active-link" : ""
-              }
-            >
-              CHW Management
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/doctors"
-              className={({ isActive }) =>
-                isActive ? "active-link" : ""
-              }
-            >
-              Doctor Management
-            </NavLink>
-          </li>
-          {/*<li>
-            <NavLink
-              to="/resources"
-              className={({ isActive }) =>
-                isActive ? "active-link" : ""
-              }
-            >
-              Resources
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/profile"
-              className={({ isActive }) =>
-                isActive ? "active-link" : ""
-              }
-            >
-              Profile & Settings
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/support"
-              className={({ isActive }) =>
-                isActive ? "active-link" : ""
-              }
-            >
-              Support
-            </NavLink>
-          </li>*/}
+          {allowedRoutes.map(route => (
+            <li key={route.path}>
+              <NavLink
+                to={route.path}
+                className={({ isActive }) =>
+                  isActive ? "active-link" : ""
+                }
+              >
+                {route.label}
+              </NavLink>
+            </li>
+          ))}
         </ul>
       </nav>
     </div>

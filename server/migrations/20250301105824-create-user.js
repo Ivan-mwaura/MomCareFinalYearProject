@@ -38,7 +38,7 @@ module.exports = {
         allowNull: false
       },
       role: {
-        type: Sequelize.ENUM('admin', 'chw', 'mother'),
+        type: Sequelize.ENUM('admin', 'chw', 'mother', 'doctor'),
         allowNull: false
       },
       motherId: {

@@ -33,7 +33,7 @@ const Appointments = () => {
       
       const user = JSON.parse(userData);
       const motherId = user.motherId || user.id;
-      console.log(motherId);
+      //console.log(motherId);
 
       const response = await axios.get(`${BACKEND_URL}/api/appointments/mother/${motherId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -47,7 +47,7 @@ const Appointments = () => {
     }
   }, []);
 
-  console.log(appointments);
+  //console.log(appointments);
   
 
   useEffect(() => {
