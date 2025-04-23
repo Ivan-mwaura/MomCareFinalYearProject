@@ -5,6 +5,8 @@ const { User } = require('../models');
 exports.createDoctor = async (req, res) => {
   try {
     const { password, ...doctorData } = req.body;
+
+    console.log(password)
     
     // Create Doctor record
     const doctor = await Doctor.create(doctorData);

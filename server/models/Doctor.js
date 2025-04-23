@@ -22,14 +22,6 @@ const Doctor = sequelize.define('Doctor', {
     unique: true,
     validate: { isEmail: true }
   },
-  password: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    validate: {
-      len: [8, 100],
-      is: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
-    }
-  },
   phone: {
     type: DataTypes.STRING,
     allowNull: false,
