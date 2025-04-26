@@ -162,40 +162,68 @@ risk_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7,
 
 risk_prediction = ctrl.ControlSystemSimulation(risk_ctrl)
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 def home():
-    return jsonify({"message": "MomCare ML API is running"})
+    return jsonify({
+        "message": "MomCare ML API is running",
+        "status": "healthy",
+        "version": "1.0"
+    })
+
+@app.route('/api', methods=['GET'])
+def api_home():
+    return home()
+
+@app.route('/api/predict', methods=['POST'])
+def api_predict():
+    return predict()
 
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
         data = request.get_json()
+        if not data:
+            return jsonify({"error": "No input data provided"}), 400
         
-        risk_prediction.input['CurrAgeGroup'] = data['CurrAgeGroup']
-        risk_prediction.input['Place_of_Residence'] = data['Place_of_Residence']
-        risk_prediction.input['Education_level'] = data['Education_level']
-        risk_prediction.input['Wealth_index'] = data['Wealth_index']
-        risk_prediction.input['marital_status'] = data['marital_status']
-        risk_prediction.input['Distance_to_health'] = data['Distance_to_health']
-        risk_prediction.input['Frequency_media_use'] = data['Frequency_media_use']
-        risk_prediction.input['Frequency_of_using_internet'] = data['Frequency_of_using_internet']
-        risk_prediction.input['Antenatal_visits'] = data['Antenatal_visits']
-        risk_prediction.input['Postnatal_visits'] = data['Postnatal_visits']
+        required_fields = [
+            'CurrAgeGroup', 'Place_of_Residence', 'Education_level',
+            'Wealth_index', 'marital_status', 'Distance_to_health',
+            'Frequency_media_use', 'Frequency_of_using_internet',
+            'Antenatal_visits', 'Postnatal_visits'
+        ]
+        
+        # Check if all required fields are present
+        missing_fields = [field for field in required_fields if field not in data]
+        if missing_fields:
+            return jsonify({
+                "error": f"Missing required fields: {', '.join(missing_fields)}"
+            }), 400
 
-        risk_prediction.compute()
+        # Reset the system for new prediction
+        risk_prediction.reset()
+        
+        # Set input values
+        for field in required_fields:
+            risk_prediction.input[field] = float(data[field])
+
+        # Compute risk
+        try:
+            risk_prediction.compute()
+        except Exception as e:
+            return jsonify({"error": f"Computation error: {str(e)}"}), 500
 
         if 'Risk' in risk_prediction.output:
-            if risk_prediction.output['Risk'] <= 5:
-                risk_category = 'Low'
-            else:
-                risk_category = 'High'
+            risk_value = float(risk_prediction.output['Risk'])
+            risk_category = 'Low' if risk_value <= 5 else 'High'
 
             return jsonify({
+                "status": "success",
                 "predicted_risk": risk_category,
-                "risk_value": float(risk_prediction.output['Risk'])
+                "risk_value": risk_value,
+                "input_data": data
             })
 
-        return jsonify({"error": "Risk not identified"})
+        return jsonify({"error": "Risk computation failed"}), 500
 
     except Exception as e:
-        return jsonify({"error": str(e)}) 
+        return jsonify({"error": f"Server error: {str(e)}"}), 500 
