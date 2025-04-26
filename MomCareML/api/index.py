@@ -77,7 +77,7 @@ Postnatal_visits['High'] = fuzz.trimf(Postnatal_visits.universe, [6, 8, 10])
 risk['Low'] = fuzz.trimf(risk.universe, [0, 0, 5])
 risk['High'] = fuzz.trimf(risk.universe, [5, 10, 10])
 
-# Define rules
+# Define all the original rules
 # Age & Education Rules
 rule1 = ctrl.Rule(CurrAgeGroup['Young'] & Education_level['Low'], risk['High'])
 rule2 = ctrl.Rule(CurrAgeGroup['Young'] & Education_level['Medium'], risk['High'])
@@ -152,13 +152,13 @@ rule58 = ctrl.Rule(Place_of_Residence['Rural'] & Education_level['Low'], risk['H
 rule59 = ctrl.Rule(Place_of_Residence['Rural'] & Education_level['Medium'], risk['High'])
 rule60 = ctrl.Rule(Place_of_Residence['Rural'] & Education_level['High'], risk['Low'])
 
-# Create control system
-risk_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10, rule11, rule12, rule13,
-                               rule14, rule15, rule16, rule17, rule18, rule19, rule20, rule21, rule22, rule23, rule24, 
-                               rule25, rule26, rule27, rule28, rule29, rule30, rule31, rule32, rule33, rule34, rule35, 
-                               rule36, rule37, rule38, rule39, rule40, rule41, rule42, rule43, rule44, rule45, rule46, 
-                               rule47, rule48, rule49, rule50, rule51, rule52, rule53, rule54, rule55, rule56, rule57, 
-                               rule58, rule59, rule60])
+# Create control system with all original rules
+risk_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10, 
+                               rule11, rule12, rule13, rule14, rule15, rule16, rule17, rule18, rule19, rule20,
+                               rule21, rule22, rule23, rule24, rule25, rule26, rule27, rule28, rule29, rule30,
+                               rule31, rule32, rule33, rule34, rule35, rule36, rule37, rule38, rule39, rule40,
+                               rule41, rule42, rule43, rule44, rule45, rule46, rule47, rule48, rule49, rule50,
+                               rule51, rule52, rule53, rule54, rule55, rule56, rule57, rule58, rule59, rule60])
 
 risk_prediction = ctrl.ControlSystemSimulation(risk_ctrl)
 
@@ -166,62 +166,57 @@ risk_prediction = ctrl.ControlSystemSimulation(risk_ctrl)
 def home():
     return jsonify({
         "message": "MomCare ML API is running",
-        "status": "healthy",
-        "version": "1.0"
+        "status": "healthy"
     })
 
-@app.route('/predict', methods=['POST'])
+@app.route('/api/predict', methods=['POST'])
 def predict():
     try:
         data = request.get_json()
         if not data:
             return jsonify({"error": "No input data provided"}), 400
-        
-        required_fields = [
-            'CurrAgeGroup', 'Place_of_Residence', 'Education_level',
-            'Wealth_index', 'marital_status', 'Distance_to_health',
-            'Frequency_media_use', 'Frequency_of_using_internet',
-            'Antenatal_visits', 'Postnatal_visits'
-        ]
-        
-        missing_fields = [field for field in required_fields if field not in data]
-        if missing_fields:
-            return jsonify({
-                "error": f"Missing required fields: {', '.join(missing_fields)}"
-            }), 400
 
+        # Reset the prediction system
         risk_prediction.reset()
-        
-        for field in required_fields:
-            risk_prediction.input[field] = float(data[field])
 
-        try:
-            risk_prediction.compute()
-        except Exception as e:
-            return jsonify({"error": f"Computation error: {str(e)}"}), 500
+        # Set inputs exactly as in original model
+        risk_prediction.input['CurrAgeGroup'] = data['CurrAgeGroup']
+        risk_prediction.input['Place_of_Residence'] = data['Place_of_Residence']
+        risk_prediction.input['Education_level'] = data['Education_level']
+        risk_prediction.input['Wealth_index'] = data['Wealth_index']
+        risk_prediction.input['marital_status'] = data['marital_status']
+        risk_prediction.input['Distance_to_health'] = data['Distance_to_health']
+        risk_prediction.input['Frequency_media_use'] = data['Frequency_media_use']
+        risk_prediction.input['Frequency_of_using_internet'] = data['Frequency_of_using_internet']
+        risk_prediction.input['Antenatal_visits'] = data['Antenatal_visits']
+        risk_prediction.input['Postnatal_visits'] = data['Postnatal_visits']
 
+        # Compute prediction
+        risk_prediction.compute()
+
+        # Return result in original format
         if 'Risk' in risk_prediction.output:
             risk_value = float(risk_prediction.output['Risk'])
             risk_category = 'Low' if risk_value <= 5 else 'High'
-
             return jsonify({
-                "status": "success",
                 "predicted_risk": risk_category,
-                "risk_value": risk_value,
-                "input_data": data
+                "risk_value": risk_value
+            })
+        else:
+            return jsonify({
+                "error": "Risk not identified, defaulting to Low risk.",
+                "risk_value": risk_prediction.output
             })
 
-        return jsonify({"error": "Risk computation failed"}), 500
-
     except Exception as e:
-        return jsonify({"error": f"Server error: {str(e)}"}), 500
+        return jsonify({"error": f"Error occurred: {str(e)}"}), 500
 
-# Add handler for Vercel
+# For Vercel serverless deployment
 @app.route('/<path:path>', methods=['GET', 'POST'])
 def catch_all(path):
     if path == "" or path == "/":
         return home()
-    elif path == "predict" and request.method == 'POST':
+    elif path == "predict" or path == "api/predict":
         return predict()
     else:
         return jsonify({"error": "Route not found"}), 404 
