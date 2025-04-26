@@ -5,6 +5,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 # Define fuzzy variables
 CurrAgeGroup = ctrl.Antecedent(np.arange(0, 50, 1), 'CurrAgeGroup')
@@ -164,8 +165,9 @@ risk_prediction = ctrl.ControlSystemSimulation(risk_ctrl)
 
 print("Fuzzy system setup completed successfully.")
 
-app = Flask(__name__)
-CORS(app)
+@app.route('/')
+def home():
+    return jsonify({"message": "MomCare ML API is running"})
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -205,10 +207,6 @@ def predict():
 
     except Exception as e:
         return jsonify({"error": f"Error occurred: {str(e)}"})
-
-
-if __name__ == '__main__':
-    app.run(debug=True, host="0.0.0.0", port=6000)
 
 
     

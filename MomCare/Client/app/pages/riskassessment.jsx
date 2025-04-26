@@ -202,7 +202,7 @@ const RiskAssessment = () => {
           <View style={styles.riskInfo}>
             <Text style={styles.riskLabel}>Risk Level</Text>
             <Text style={styles.riskLevel}>
-              {riskScore > 70 ? "High" : riskScore > 40 ? "Moderate" : "Low"}
+              { riskScore && riskScore > 70 ? "High" : riskScore > 40 ? "Moderate" : "Low"}
             </Text>
             <Text style={styles.riskScore}>{riskScore}%</Text>
           </View>

@@ -4,6 +4,8 @@ import "./Doctors.scss";
 import { useToast } from "../../Components/ui/use-toast";
 import Cookies from "js-cookie";
 import DoctorsSkeleton from "../../Components/Skeletons/DoctorsSkeleton"; // Import the skeleton
+// Add an import for a spinner or loading indicator if you have one, e.g.:
+// import { Spinner } from "../../Components/ui/Spinner"; 
 
 const INITIAL_DOCTOR_STATE = {
   firstName: "",
@@ -27,6 +29,7 @@ const Doctors = () => {
   const [viewingDoctor, setViewingDoctor] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true); // Add loading state
+  const [isSubmitting, setIsSubmitting] = useState(false); // <-- Add this state
   const { toast } = useToast();
   const [newDoctor, setNewDoctor] = useState(INITIAL_DOCTOR_STATE);
 
@@ -75,11 +78,12 @@ const Doctors = () => {
     setNewDoctor((prev) => ({ ...prev, [name]: value }));
   }, []);
 
-  console.log(newDoctor)
+  //console.log(newDoctor)
 
   const handleFormSubmit = useCallback(
     async (e) => {
       e.preventDefault();
+      setIsSubmitting(true); // <-- Set submitting state to true
       try {
         const response = editingDoctor
           ? await axios.put(`${import.meta.env.VITE_BACKEND_URL}/doctors/${editingDoctor.id}`, newDoctor, {
@@ -106,10 +110,13 @@ const Doctors = () => {
         setNewDoctor(INITIAL_DOCTOR_STATE);
         setEditingDoctor(null);
       } catch (err) {
+        console.log(err)
         toast({
           title: "❌ Error",
           description: err.response?.data?.message || "An error occurred."
         });
+      } finally {
+        setIsSubmitting(false); // <-- Set submitting state to false in finally block
       }
     },
     [newDoctor, editingDoctor, toast]
@@ -378,8 +385,12 @@ const Doctors = () => {
                 </div>
               </div>
               <div className="form-actions">
-                <button type="submit">Save</button>
-                <button type="button" onClick={() => setShowForm(false)}>
+                <button type="submit" disabled={isSubmitting}> {/* <-- Disable button when submitting */} 
+                  {isSubmitting ? "Saving..." : "Save"} {/* <-- Change button text */} 
+                  {/* Optional: Add a spinner icon here if you have one */} 
+                  {/* {isSubmitting && <Spinner />} */} 
+                </button>
+                <button type="button" onClick={() => setShowForm(false)} disabled={isSubmitting}> {/* <-- Optionally disable cancel too */}
                   Cancel
                 </button>
               </div>

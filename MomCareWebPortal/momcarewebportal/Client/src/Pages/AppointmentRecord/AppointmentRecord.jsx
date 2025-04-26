@@ -1,64 +1,66 @@
-import React, { useState, useEffect } from "react";
-import axios from "../../utils/axiosConfig";
-import "./AppointmentRecord.scss";
-import { useToast } from "../../Components/ui/use-toast";
-import Cookies from "js-cookie";
-import AppointmentRecordSkeleton from "../../Components/Skeletons/AppointmentRecordSkeleton";
+
+import React, { useState, useEffect, useRef } from 'react';
+import axios from '../../utils/axiosConfig';
+import { useToast } from '../../Components/ui/use-toast';
+import Cookies from 'js-cookie';
+import AppointmentRecordSkeleton from '../../Components/Skeletons/AppointmentRecordSkeleton';
+import CircularProgress from '@mui/material/CircularProgress';
+import './AppointmentRecord.scss';
 
 const AppointmentRecord = () => {
   const { toast } = useToast();
-
-  const [searchQuery, setSearchQuery] = useState("");
+  const [darkMode, setDarkMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [motherResults, setMotherResults] = useState([]);
   const [selectedMother, setSelectedMother] = useState(null);
   const [showSearch, setShowSearch] = useState(true);
   const [loading, setLoading] = useState(false);
-
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    appointmentDate: "",
-    appointmentTime: "",
-    visitType: "",
+    appointmentDate: '',
+    appointmentTime: '',
+    visitType: '',
     attended: false,
-    bloodPressure: "",
-    heartRate: "",
-    temperature: "",
-    weight: "",
-    fundalHeight: "",
-    fetalHeartRate: "",
-    gestationalAge: "",
-    physicalFindings: "",
-    symptoms: "",
-    labResults: "",
-    ultrasoundSummary: "",
-    prescribedMedications: "",
-    interventions: "",
-    nextAppointmentDate: "",
-    careRecommendations: "",
-    adherenceNotes: "",
-    doctorsObservations: "",
-    patientConcerns: ""
+    bloodPressure: '',
+    heartRate: '',
+    temperature: '',
+    weight: '',
+    fundalHeight: '',
+    fetalHeartRate: '',
+    gestationalAge: '',
+    physicalFindings: '',
+    symptoms: '',
+    labResults: '',
+    ultrasoundSummary: '',
+    prescribedMedications: '',
+    interventions: '',
+    nextAppointmentDate: '',
+    careRecommendations: '',
+    adherenceNotes: '',
+    doctorsObservations: '',
+    patientConcerns: '',
   });
-
-  const [activeTab, setActiveTab] = useState("visitDetails");
+  const [activeTab, setActiveTab] = useState('visitDetails');
   const [appointmentRecords, setAppointmentRecords] = useState([]);
   const [expandedRecords, setExpandedRecords] = useState({});
+  const searchRef = useRef(null);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      if (searchQuery.trim() !== "") {
+      if (searchQuery.trim() !== '') {
         setLoading(true);
         axios
           .get(
             `${import.meta.env.VITE_BACKEND_URL}/mothers/search?search=${encodeURIComponent(searchQuery)}`,
             {
-              headers: { Authorization: `Bearer ${Cookies.get("token")}` }
+              headers: { Authorization: `Bearer ${Cookies.get('token')}` },
             }
           )
           .then((response) => {
             setMotherResults(response.data.data || []);
           })
           .catch((error) => {
-            toast({ title: "Error", description: "Failed to fetch mothers." });
+            toast({ title: 'Error', description: 'Failed to fetch mothers.' });
           })
           .finally(() => setLoading(false));
       } else {
@@ -75,7 +77,7 @@ const AppointmentRecord = () => {
         .get(
           `${import.meta.env.VITE_BACKEND_URL}/appointmentRecords/mother/${selectedMother.id}`,
           {
-            headers: { Authorization: `Bearer ${Cookies.get("token")}` }
+            headers: { Authorization: `Bearer ${Cookies.get('token')}` },
           }
         )
         .then((response) => {
@@ -83,46 +85,58 @@ const AppointmentRecord = () => {
         })
         .catch((error) => {
           toast({
-            title: "Error",
-            description: "Failed to fetch appointment records."
+            title: 'Error',
+            description: 'Failed to fetch appointment records.',
           });
         });
     }
   }, [selectedMother, toast]);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setMotherResults([]);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleMotherSelect = (mother) => {
     setSelectedMother(mother);
     setShowSearch(false);
+    setSearchQuery('');
+    setMotherResults([]);
   };
 
   const handleResetSearch = () => {
     setSelectedMother(null);
-    setSearchQuery("");
+    setSearchQuery('');
     setShowSearch(true);
     setMotherResults([]);
     setFormData({
-      appointmentDate: "",
-      appointmentTime: "",
-      visitType: "",
+      appointmentDate: '',
+      appointmentTime: '',
+      visitType: '',
       attended: false,
-      bloodPressure: "",
-      heartRate: "",
-      temperature: "",
-      weight: "",
-      fundalHeight: "",
-      fetalHeartRate: "",
-      gestationalAge: "",
-      physicalFindings: "",
-      symptoms: "",
-      labResults: "",
-      ultrasoundSummary: "",
-      prescribedMedications: "",
-      interventions: "",
-      nextAppointmentDate: "",
-      careRecommendations: "",
-      adherenceNotes: "",
-      doctorsObservations: "",
-      patientConcerns: ""
+      bloodPressure: '',
+      heartRate: '',
+      temperature: '',
+      weight: '',
+      fundalHeight: '',
+      fetalHeartRate: '',
+      gestationalAge: '',
+      physicalFindings: '',
+      symptoms: '',
+      labResults: '',
+      ultrasoundSummary: '',
+      prescribedMedications: '',
+      interventions: '',
+      nextAppointmentDate: '',
+      careRecommendations: '',
+      adherenceNotes: '',
+      doctorsObservations: '',
+      patientConcerns: '',
     });
     setAppointmentRecords([]);
     setExpandedRecords({});
@@ -132,163 +146,206 @@ const AppointmentRecord = () => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!selectedMother) {
-      toast({ title: "Error", description: "Please select a mother before submitting." });
+      toast({ title: 'Error', description: 'Please select a mother before submitting.' });
       return;
     }
     if (!formData.appointmentTime) {
-      toast({ title: "Error", description: "Appointment Time is required." });
+      toast({ title: 'Error', description: 'Appointment Time is required.' });
       return;
     }
+    setSubmitting(true);
     const recordData = { ...formData, motherId: selectedMother.id };
     axios
       .post(`${import.meta.env.VITE_BACKEND_URL}/appointmentRecords`, recordData, {
-        headers: { Authorization: `Bearer ${Cookies.get("token")}` }
+        headers: { Authorization: `Bearer ${Cookies.get('token')}` },
       })
       .then((response) => {
-        toast({ title: "Success", description: "Appointment record saved successfully." });
+        toast({ title: 'Success', description: 'Appointment record saved successfully.' });
         setAppointmentRecords((prev) => [...prev, response.data.data]);
         setFormData({
-          appointmentDate: "",
-          appointmentTime: "",
-          visitType: "",
+          appointmentDate: '',
+          appointmentTime: '',
+          visitType: '',
           attended: false,
-          bloodPressure: "",
-          heartRate: "",
-          temperature: "",
-          weight: "",
-          fundalHeight: "",
-          fetalHeartRate: "",
-          gestationalAge: "",
-          physicalFindings: "",
-          symptoms: "",
-          labResults: "",
-          ultrasoundSummary: "",
-          prescribedMedications: "",
-          interventions: "",
-          nextAppointmentDate: "",
-          careRecommendations: "",
-          adherenceNotes: "",
-          doctorsObservations: "",
-          patientConcerns: ""
+          bloodPressure: '',
+          heartRate: '',
+          temperature: '',
+          weight: '',
+          fundalHeight: '',
+          fetalHeartRate: '',
+          gestationalAge: '',
+          physicalFindings: '',
+          symptoms: '',
+          labResults: '',
+          ultrasoundSummary: '',
+          prescribedMedications: '',
+          interventions: '',
+          nextAppointmentDate: '',
+          careRecommendations: '',
+          adherenceNotes: '',
+          doctorsObservations: '',
+          patientConcerns: '',
         });
       })
       .catch((error) => {
         toast({
-          title: "Error",
-          description: error.response?.data?.message || "Failed to save appointment record."
+          title: 'Error',
+          description: error.response?.data?.message || 'Failed to save appointment record.',
         });
-      });
+      })
+      .finally(() => setSubmitting(false));
   };
 
   const toggleRecordExpansion = (recordId) => {
     setExpandedRecords((prev) => ({
       ...prev,
-      [recordId]: !prev[recordId]
+      [recordId]: !prev[recordId],
     }));
   };
 
   const tabs = [
-    { id: "visitDetails", label: "Visit Details", icon: "📅" },
-    { id: "vitalSigns", label: "Vital Signs", icon: "❤️" },
-    { id: "obstetric", label: "Obstetric Assessments", icon: "👶" },
-    { id: "clinical", label: "Clinical Observations", icon: "🩺" },
-    { id: "lab", label: "Lab & Diagnostics", icon: "🧪" },
-    { id: "medications", label: "Medications", icon: "💊" },
-    { id: "followUp", label: "Follow-Up", icon: "📅" },
-    { id: "notes", label: "Notes", icon: "📝" }
+    { id: 'visitDetails', label: 'Visit Details', icon: '📅' },
+    { id: 'vitalSigns', label: 'Vital Signs', icon: '❤️' },
+    { id: 'obstetric', label: 'Obstetric Assessments', icon: '👶' },
+    { id: 'clinical', label: 'Clinical Observations', icon: '🩺' },
+    { id: 'lab', label: 'Lab & Diagnostics', icon: '🧪' },
+    { id: 'medications', label: 'Medications', icon: '💊' },
+    { id: 'followUp', label: 'Follow-Up', icon: '📅' },
+    { id: 'notes', label: 'Notes', icon: '📝' },
   ];
 
-  if (loading) {
+  const highlightMatch = (text, query) => {
+    if (!query) return text;
+    const regex = new RegExp(`(${query})`, 'gi');
+    return text.replace(regex, '<span class="highlight">$1</span>');
+  };
+
+  if (loading && !motherResults.length) {
     return <AppointmentRecordSkeleton />;
   }
 
   return (
-    <div className="appointment-record-page">
-      <header className="page-header">
-        <div className="search-container">
-          {showSearch && (
-            <div className="search-wrapper">
-              <input
-                type="text"
-                placeholder="Search for a mother by name or email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {loading && <div className="loading">Searching...</div>}
-              {!loading && searchQuery.trim() !== "" && motherResults.length === 0 && (
-                <div className="no-results">No mothers found</div>
-              )}
-              {motherResults.length > 0 && (
-                <ul className="search-results">
-                  {motherResults.map((mother) => (
-                    <li key={mother.id} onClick={() => handleMotherSelect(mother)}>
-                      <span>{mother.firstName} {mother.lastName}</span>
-                      <span className="email">{mother.email}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-        </div>
-      </header>
-
-      {!selectedMother && (
-        <div className="welcome-section">
-          <div className="welcome-card">
-            <h1>Welcome to Appointment Records</h1>
-            <p>
-              Manage and record appointments for expectant mothers with ease. Use the search bar above to find a mother by name or email, then document her visit details, vital signs, and more.
-            </p>
-            <div className="tips-grid">
-              <div className="tip-card">
-                <span className="tip-icon">📅</span>
-                <h3>Schedule Visits</h3>
-                <p>Enter a mother's name or email to start recording her appointment details.</p>
-              </div>
-              <div className="tip-card">
-                <span className="tip-icon">🩺</span>
-                <h3>Track Health</h3>
-                <p>Record vital signs, obstetric assessments, and clinical observations efficiently.</p>
-              </div>
-              <div className="tip-card">
-                <span className="tip-icon">📝</span>
-                <h3>Stay Organized</h3>
-                <p>View past records and add follow-up notes to ensure continuity of care.</p>
-              </div>
-            </div>
+    <div className={`appointment-record-page ${darkMode ? 'dark-mode' : ''}`}>
+      <div className="page-header">
+        <div className="user-info">
+          <div className="user-initials">IM</div>
+          <div className="user-welcome">
+            <p>Welcome, Ivy Mitchelle</p>
           </div>
+        </div>
+        <h1>Appointment Records</h1>
+        <button onClick={() => setDarkMode(!darkMode)}>
+          {darkMode ? 'Light Mode' : 'Dark Mode'}
+        </button>
+      </div>
+
+      {showSearch && (
+        <div className="search-bar" ref={searchRef}>
+          <form onSubmit={(e) => e.preventDefault()}>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by mother's name or email..."
+              autoFocus
+            />
+            {loading && <div className="search-loading">Searching...</div>}
+            {motherResults.length > 0 && (
+              <ul className="search-suggestions">
+                {motherResults.slice(0, 5).map((mother) => (
+                  <li
+                    key={mother.id}
+                    onClick={() => handleMotherSelect(mother)}
+                    dangerouslySetInnerHTML={{
+                      __html: `${highlightMatch(
+                        `${mother.firstName} ${mother.lastName}`,
+                        searchQuery
+                      )} <span class="email">${highlightMatch(mother.email, searchQuery)}</span>`,
+                    }}
+                  />
+                ))}
+              </ul>
+            )}
+            {!loading && searchQuery.trim() && !motherResults.length && (
+              <div className="no-results">No mothers found</div>
+            )}
+          </form>
         </div>
       )}
 
-      {selectedMother && (
+      {!selectedMother ? (
+        <div className="welcome-section">
+          <h2>Welcome to Appointment Records</h2>
+          <p>
+            Manage and record appointments for expectant mothers with ease. Search for a mother by name or email
+            to document her visit details, vital signs, and more.
+          </p>
+          <div className="tip-cards">
+            <div className="tip-card">
+              <span className="tip-icon">📅</span>
+              <h3>Schedule Visits</h3>
+              <p>Enter a name or email to start recording a mother’s appointment details.</p>
+            </div>
+            <div className="tip-card">
+              <span className="tip-icon">🩺</span>
+              <h3>Track Health</h3>
+              <p>Record vital signs, obstetric assessments, and clinical observations efficiently.</p>
+            </div>
+            <div className="tip-card">
+              <span className="tip-icon">📝</span>
+              <h3>Stay Organized</h3>
+              <p>View past records and add follow-up notes to ensure continuity of care.</p>
+            </div>
+          </div>
+        </div>
+      ) : (
         <div className="appointment-record-container">
           <div className="sidebar">
-            <h1>Appointment / Visit Record</h1>
             <div className="mother-profile">
-              <h2>{selectedMother.firstName} {selectedMother.lastName}</h2>
+              <h2>
+                {selectedMother.firstName} {selectedMother.lastName}
+              </h2>
               <div className="profile-details">
-                <p><strong>Email:</strong> {selectedMother.email}</p>
-                <p><strong>Phone:</strong> {selectedMother.phone}</p>
-                <p><strong>Location:</strong> {selectedMother.ward}, {selectedMother.constituency}, {selectedMother.county}</p>
-                <p><strong>Assigned CHW:</strong> {selectedMother.assignedCHW || "Not assigned"}</p>
-                <p><strong>Due Date:</strong> {new Date(selectedMother.dueDate).toDateString()}</p>
-                <p><strong>Pregnancy Stage:</strong> {selectedMother.pregnancyStage}</p>
-                <p><strong>Weeks Pregnant:</strong> {selectedMother.weeksPregnant}</p>
+                <p>
+                  <strong>Email:</strong> {selectedMother.email}
+                </p>
+                <p>
+                  <strong>Phone:</strong> {selectedMother.phone || 'N/A'}
+                </p>
+                <p>
+                  <strong>Location:</strong> {selectedMother.ward}, {selectedMother.constituency},{' '}
+                  {selectedMother.county}
+                </p>
+                <p>
+                  <strong>Assigned CHW:</strong> {selectedMother.assignedCHW || 'Not assigned'}
+                </p>
+                <p>
+                  <strong>Due Date:</strong>{' '}
+                  {new Date(selectedMother.dueDate).toLocaleDateString()}
+                </p>
+                <p>
+                  <strong>Pregnancy Stage:</strong> {selectedMother.pregnancyStage || 'N/A'}
+                </p>
+                <p>
+                  <strong>Weeks Pregnant:</strong> {selectedMother.weeksPregnant || 'N/A'}
+                </p>
               </div>
+              <button className="reset-btn" onClick={handleResetSearch}>
+                Change Mother
+              </button>
             </div>
             <nav className="sidebar-nav">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  className={`nav-item ${activeTab === tab.id ? "active" : ""}`}
+                  className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
                   onClick={() => setActiveTab(tab.id)}
                 >
                   <span className="icon">{tab.icon}</span>
@@ -301,7 +358,7 @@ const AppointmentRecord = () => {
           <div className="main-content">
             <form onSubmit={handleSubmit}>
               <div className="form-section">
-                {activeTab === "visitDetails" && (
+                {activeTab === 'visitDetails' && (
                   <div className="form-content">
                     <h3>Visit Details</h3>
                     <div className="form-grid">
@@ -346,13 +403,14 @@ const AppointmentRecord = () => {
                           checked={formData.attended}
                           onChange={handleInputChange}
                         />
+                        <span className="checkbox-indicator"></span>
                         <span>Attended</span>
                       </label>
                     </div>
                   </div>
                 )}
 
-                {activeTab === "vitalSigns" && (
+                {activeTab === 'vitalSigns' && (
                   <div className="form-content">
                     <h3>Vital Signs</h3>
                     <div className="form-grid">
@@ -405,7 +463,7 @@ const AppointmentRecord = () => {
                   </div>
                 )}
 
-                {activeTab === "obstetric" && (
+                {activeTab === 'obstetric' && (
                   <div className="form-content">
                     <h3>Obstetric Assessments</h3>
                     <div className="form-grid">
@@ -446,7 +504,7 @@ const AppointmentRecord = () => {
                   </div>
                 )}
 
-                {activeTab === "clinical" && (
+                {activeTab === 'clinical' && (
                   <div className="form-content">
                     <h3>Clinical Observations</h3>
                     <div className="form-grid">
@@ -474,7 +532,7 @@ const AppointmentRecord = () => {
                   </div>
                 )}
 
-                {activeTab === "lab" && (
+                {activeTab === 'lab' && (
                   <div className="form-content">
                     <h3>Lab & Diagnostics</h3>
                     <div className="form-grid">
@@ -502,7 +560,7 @@ const AppointmentRecord = () => {
                   </div>
                 )}
 
-                {activeTab === "medications" && (
+                {activeTab === 'medications' && (
                   <div className="form-content">
                     <h3>Medications & Treatments</h3>
                     <div className="form-grid">
@@ -530,7 +588,7 @@ const AppointmentRecord = () => {
                   </div>
                 )}
 
-                {activeTab === "followUp" && (
+                {activeTab === 'followUp' && (
                   <div className="form-content">
                     <h3>Follow-Up & Recommendations</h3>
                     <div className="form-grid">
@@ -568,7 +626,7 @@ const AppointmentRecord = () => {
                   </div>
                 )}
 
-                {activeTab === "notes" && (
+                {activeTab === 'notes' && (
                   <div className="form-content">
                     <h3>Additional Notes</h3>
                     <div className="form-grid">
@@ -598,12 +656,25 @@ const AppointmentRecord = () => {
               </div>
 
               <div className="form-actions">
-                <button type="submit" className="submit-btn">
-                  Save Record
-                </button>
-                <button type="button" className="cancel-btn" onClick={handleResetSearch}>
-                  Cancel
-                </button>
+                {submitting ? (
+                  <div className="loader-container">
+                    <CircularProgress size={32} sx={{ color: '#FF6B8A' }} />
+                  </div>
+                ) : (
+                  <>
+                    <button type="submit" className="submit-btn" disabled={submitting}>
+                      Save Record
+                    </button>
+                    <button
+                      type="button"
+                      className="cancel-btn"
+                      onClick={handleResetSearch}
+                      disabled={submitting}
+                    >
+                      Cancel
+                    </button>
+                  </>
+                )}
               </div>
             </form>
 
@@ -618,39 +689,86 @@ const AppointmentRecord = () => {
                         <div className="record-header">
                           <div className="record-info">
                             <span className="record-date">
-                              {new Date(record.appointmentDate).toDateString()} at {record.appointmentTime || "N/A"}
+                              {new Date(record.appointmentDate).toLocaleDateString()} at{' '}
+                              {record.appointmentTime || 'N/A'}
                             </span>
-                            <span className="record-type">{record.visitType || "N/A"}</span>
+                            <span className="record-type">{record.visitType || 'N/A'}</span>
                           </div>
                           <button
                             className="toggle-details-btn"
                             onClick={() => toggleRecordExpansion(record.id)}
                           >
-                            {expandedRecords[record.id] ? "Hide" : "View"}
+                            {expandedRecords[record.id] ? 'Hide' : 'View'}
                           </button>
                         </div>
                         {expandedRecords[record.id] && (
                           <div className="record-details">
                             <div className="details-grid">
-                              <div><strong>Attended:</strong> {record.attended ? "Yes" : "No"}</div>
-                              <div><strong>Blood Pressure:</strong> {record.bloodPressure || "N/A"}</div>
-                              <div><strong>Heart Rate:</strong> {record.heartRate || "N/A"}</div>
-                              <div><strong>Temperature:</strong> {record.temperature || "N/A"}</div>
-                              <div><strong>Weight:</strong> {record.weight || "N/A"}</div>
-                              <div><strong>Fundal Height:</strong> {record.fundalHeight || "N/A"}</div>
-                              <div><strong>Fetal Heart Rate:</strong> {record.fetalHeartRate || "N/A"}</div>
-                              <div><strong>Gestational Age:</strong> {record.gestationalAge || "N/A"}</div>
-                              <div><strong>Physical Findings:</strong> {record.physicalFindings || "N/A"}</div>
-                              <div><strong>Symptoms:</strong> {record.symptoms || "N/A"}</div>
-                              <div><strong>Lab Results:</strong> {record.labResults || "N/A"}</div>
-                              <div><strong>Ultrasound Summary:</strong> {record.ultrasoundSummary || "N/A"}</div>
-                              <div><strong>Prescribed Medications:</strong> {record.prescribedMedications || "N/A"}</div>
-                              <div><strong>Interventions:</strong> {record.interventions || "N/A"}</div>
-                              <div><strong>Next Appointment Date:</strong> {record.nextAppointmentDate ? new Date(record.nextAppointmentDate).toDateString() : "N/A"}</div>
-                              <div><strong>Care Recommendations:</strong> {record.careRecommendations || "N/A"}</div>
-                              <div><strong>Adherence Notes:</strong> {record.adherenceNotes || "N/A"}</div>
-                              <div><strong>Doctor's Observations:</strong> {record.doctorsObservations || "N/A"}</div>
-                              <div><strong>Patient Concerns:</strong> {record.patientConcerns || "N/A"}</div>
+                              <div>
+                                <strong>Attended:</strong> {record.attended ? 'Yes' : 'No'}
+                              </div>
+                              <div>
+                                <strong>Blood Pressure:</strong> {record.bloodPressure || 'N/A'}
+                              </div>
+                              <div>
+                                <strong>Heart Rate:</strong> {record.heartRate || 'N/A'}
+                              </div>
+                              <div>
+                                <strong>Temperature:</strong> {record.temperature || 'N/A'}
+                              </div>
+                              <div>
+                                <strong>Weight:</strong> {record.weight || 'N/A'}
+                              </div>
+                              <div>
+                                <strong>Fundal Height:</strong> {record.fundalHeight || 'N/A'}
+                              </div>
+                              <div>
+                                <strong>Fetal Heart Rate:</strong> {record.fetalHeartRate || 'N/A'}
+                              </div>
+                              <div>
+                                <strong>Gestational Age:</strong> {record.gestationalAge || 'N/A'}
+                              </div>
+                              <div>
+                                <strong>Physical Findings:</strong>{' '}
+                                {record.physicalFindings || 'N/A'}
+                              </div>
+                              <div>
+                                <strong>Symptoms:</strong> {record.symptoms || 'N/A'}
+                              </div>
+                              <div>
+                                <strong>Lab Results:</strong> {record.labResults || 'N/A'}
+                              </div>
+                              <div>
+                                <strong>Ultrasound Summary:</strong>{' '}
+                                {record.ultrasoundSummary || 'N/A'}
+                              </div>
+                              <div>
+                                <strong>Prescribed Medications:</strong>{' '}
+                                {record.prescribedMedications || 'N/A'}
+                              </div>
+                              <div>
+                                <strong>Interventions:</strong> {record.interventions || 'N/A'}
+                              </div>
+                              <div>
+                                <strong>Next Appointment Date:</strong>{' '}
+                                {record.nextAppointmentDate
+                                  ? new Date(record.nextAppointmentDate).toLocaleDateString()
+                                  : 'N/A'}
+                              </div>
+                              <div>
+                                <strong>Care Recommendations:</strong>{' '}
+                                {record.careRecommendations || 'N/A'}
+                              </div>
+                              <div>
+                                <strong>Adherence Notes:</strong> {record.adherenceNotes || 'N/A'}
+                              </div>
+                              <div>
+                                <strong>Doctor's Observations:</strong>{' '}
+                                {record.doctorsObservations || 'N/A'}
+                              </div>
+                              <div>
+                                <strong>Patient Concerns:</strong> {record.patientConcerns || 'N/A'}
+                              </div>
                             </div>
                           </div>
                         )}

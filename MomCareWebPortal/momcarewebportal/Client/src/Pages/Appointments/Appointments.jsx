@@ -99,7 +99,7 @@ const Appointments = () => {
 
   const handleConfirmReschedule = async (newDate, newTime) => {
     try {
-      await axios.put(`/appointments/${reschedulingAppointment.id}/reschedule`, {
+      await axios.put(`/appointments/${reschedulingAppointment.id}`, {
         date: newDate,
         time: newTime
       });
@@ -129,7 +129,7 @@ const Appointments = () => {
 
   const handleConfirmCancel = async () => {
     try {
-      await axios.put(`/appointments/${cancelingAppointment.id}/cancel`);
+      await axios.delete(`/appointments/${cancelingAppointment.id}`);
       dispatch(fetchAppointments());
       setCancelingAppointment(null);
       toast({

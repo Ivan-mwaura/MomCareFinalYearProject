@@ -64,13 +64,13 @@ export const routeConfig = [
     icon: 'appointments-icon',
     allowedRoles: [ROLES.CHW, ROLES.DOCTOR]
   },
-  {
+  /*{
     path: '/analytics',
     label: 'Analytics',
     component: Analytics,
     icon: 'analytics-icon',
     allowedRoles: [ROLES.ADMIN, ROLES.CHW, ROLES.DOCTOR]
-  },
+  },*/
   {
     path: '/chws',
     label: 'CHW Management',
@@ -84,5 +84,5 @@ export const routeConfig = [
     component: Doctors,
     icon: 'doctor-icon',
     allowedRoles: [ROLES.ADMIN]
-  }
+  },
 ]; 

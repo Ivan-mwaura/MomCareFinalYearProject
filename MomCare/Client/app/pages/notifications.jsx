@@ -38,54 +38,43 @@ const Notifications = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchNotificationsData = useCallback(async () => {
+    setLoading(true); // Set loading at the start of fetch
+    setRefreshing(true); // Also indicate refresh start
     try {
       const token = await AsyncStorage.getItem("token");
-      if (!token) throw new Error("No token");
+      if (!token) throw new Error("No token found");
 
-      const [notifResponse, alertsResponse] = await Promise.all([
-        axios.get(`${BACKEND_URL}/api/notifications`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get(`${BACKEND_URL}/api/alerts`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
+      // --- Fetch only notifications ---
+      const notifResponse = await axios.get(`${BACKEND_URL}/api/notifications`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-      console.log("Notifications Response:", notifResponse.data);
-      console.log("Alerts Response:", alertsResponse.data);
+      // console.log("Notifications Response:", notifResponse.data);
 
-      // Handle notifications data - it's already an array
+      // --- Process only notifications ---
       const notifData = Array.isArray(notifResponse.data) ? notifResponse.data.map((notif) => ({
         id: notif.id,
-        type: notif.type || "Notification",
+        type: notif.type || "Notification", // Keep type for icons
         title: notif.title || "Notification",
         message: notif.message,
         time: notif.date || notif.createdAt,
       })) : [];
 
-      console.log("Processed Notifications:", notifData);
+      // console.log("Processed Notifications:", notifData);
 
-      // Handle alerts data - it's nested under data property
-      const alerts = Array.isArray(alertsResponse.data?.data) ? alertsResponse.data.data.map((alert) => ({
-        id: `alert-${alert.id}`,
-        type: "Alert",
-        title: alert.type,
-        message: alert.description,
-        time: alert.date || alert.createdAt,
-      })) : [];
-
-      console.log("Processed Alerts:", alerts);
-
-      const mergedData = [...notifData, ...alerts].sort(
+      // --- Sort notifications by time ---
+      const sortedNotifications = notifData.sort(
         (a, b) => new Date(b.time) - new Date(a.time)
       );
-      console.log("Final Merged Data:", mergedData);
       
-      setNotifications(mergedData);
+      // console.log("Final Sorted Notifications:", sortedNotifications);
+      setNotifications(sortedNotifications);
+
     } catch (error) {
-      console.error("Fetch error:", error);
-      console.error("Error response:", error.response?.data);
-      setNotifications([]); // Set empty array on error
+      console.error("Fetch notifications error:", error);
+      // console.error("Error response:", error.response?.data);
+      setNotifications([]); // Set empty array on error to avoid rendering stale data
+      // Optionally add a toast message here for the user
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -97,16 +86,16 @@ const Notifications = () => {
   }, [fetchNotificationsData]);
 
   const onRefresh = useCallback(() => {
-    setRefreshing(true);
+    // No need to setRefreshing(true) here, fetchNotificationsData does it
     fetchNotificationsData();
   }, [fetchNotificationsData]);
 
   const getIconName = (type) => {
-    switch (type) {
-      case "Reminder": return "calendar";
-      case "Alert": return "alert-circle";
-      case "Health Tip": return "heart";
-      default: return "notifications";
+    switch (type?.toLowerCase()) { // Make comparison case-insensitive
+      case "reminder": return "calendar";
+      // case "alert": return "alert-circle"; // Remove alert icon case if not needed
+      case "health tip": return "heart";
+      default: return "notifications"; // Default icon
     }
   };
 
@@ -118,9 +107,11 @@ const Notifications = () => {
       <View style={styles.notificationContent}>
         <Text style={styles.notificationTitle}>{item.title}</Text>
         <Text style={styles.notificationMessage}>
-          {item.type === "Reminder" ? formatNotificationMessage(item.message) : item.message}
+          {/* Adjust message formatting if needed now that alerts are gone */}
+          {item.type === "Reminder" ? formatNotificationMessage(item.message) : item.message} 
         </Text>
-        <Text style={styles.notificationTime}>{item.time}</Text>
+        {/* Format time for better readability */}
+        <Text style={styles.notificationTime}>{new Date(item.time).toLocaleString()}</Text> 
       </View>
     </TouchableOpacity>
   );
