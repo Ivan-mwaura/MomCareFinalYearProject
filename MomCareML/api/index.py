@@ -170,14 +170,6 @@ def home():
         "version": "1.0"
     })
 
-@app.route('/api', methods=['GET'])
-def api_home():
-    return home()
-
-@app.route('/api/predict', methods=['POST'])
-def api_predict():
-    return predict()
-
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
@@ -192,21 +184,17 @@ def predict():
             'Antenatal_visits', 'Postnatal_visits'
         ]
         
-        # Check if all required fields are present
         missing_fields = [field for field in required_fields if field not in data]
         if missing_fields:
             return jsonify({
                 "error": f"Missing required fields: {', '.join(missing_fields)}"
             }), 400
 
-        # Reset the system for new prediction
         risk_prediction.reset()
         
-        # Set input values
         for field in required_fields:
             risk_prediction.input[field] = float(data[field])
 
-        # Compute risk
         try:
             risk_prediction.compute()
         except Exception as e:
@@ -226,4 +214,14 @@ def predict():
         return jsonify({"error": "Risk computation failed"}), 500
 
     except Exception as e:
-        return jsonify({"error": f"Server error: {str(e)}"}), 500 
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
+
+# Add handler for Vercel
+@app.route('/<path:path>', methods=['GET', 'POST'])
+def catch_all(path):
+    if path == "" or path == "/":
+        return home()
+    elif path == "predict" and request.method == 'POST':
+        return predict()
+    else:
+        return jsonify({"error": "Route not found"}), 404 
