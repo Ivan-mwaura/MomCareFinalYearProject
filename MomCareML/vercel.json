@@ -1,25 +1,14 @@
 {
-    "version": 2,
     "builds": [
-        {
-            "src": "api/index.py",
-            "use": "@vercel/python",
-            "config": {
-                "runtime": "python3.9",
-                "maxLambdaSize": "15mb",
-                "installCommand": "pip install -r requirements.txt"
-            }
-        }
+      {
+        "src": "model.py",
+        "use": "@vercel/python"
+      }
     ],
     "routes": [
-        {
-            "src": "/api/predict",
-            "methods": ["POST"],
-            "dest": "api/index.py"
-        },
-        {
-            "src": "/(.*)",
-            "dest": "api/index.py"
-        }
+      {
+        "src": "/(.*)",
+        "dest": "model.py"
+      }
     ]
-} 
+  }

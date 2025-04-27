@@ -1,0 +1,9 @@
+myvenv/
+*.xlsx
+*.jpeg
+*.csv
+*.docx
+*.docx#
+survey_visualization/
+Trials/
+.venv/
