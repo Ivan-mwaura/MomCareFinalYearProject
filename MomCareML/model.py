@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
@@ -208,6 +209,11 @@ def home():
     </body>
     </html>
     """
+    
+# Add this route near your other routes (e.g., after the '/' route)
+@app.route('/debug')
+def debug():
+    return jsonify({"python_version": sys.version})
 
 # Existing predict endpoint
 @app.route('/predict', methods=['POST'])
