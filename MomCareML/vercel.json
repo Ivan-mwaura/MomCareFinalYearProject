@@ -25,5 +25,8 @@
         "methods": ["GET"],
         "dest": "model.py"
       }
-    ]
+    ],
+    "python": {
+      "version": "3.9"
+    }
   }
