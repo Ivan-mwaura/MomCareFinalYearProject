@@ -5,7 +5,7 @@
         "use": "@vercel/python",
         "config": {
           "runtime": "python3.9",
-          "buildCommand": "python3.9 -m pip install -r requirements.txt && python3.9 -m compileall .",
+          "buildCommand": "/opt/python3.9/bin/python3.9 -m pip install -r requirements.txt && /opt/python3.9/bin/python3.9 -m compileall .",
           "pythonVersion": "3.9"
         }
       }
