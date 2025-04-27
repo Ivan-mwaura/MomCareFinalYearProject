@@ -190,6 +190,11 @@ def home():
                 font-size: 1.2em;
                 margin: 20px 0;
             }
+            .error-message {
+                color: #e74c3c;
+                font-size: 1.2em;
+                margin: 20px 0;
+            }
             p {
                 color: #7f8c8d;
             }
@@ -198,14 +203,48 @@ def home():
     <body>
         <div class="container">
             <h1>MomCareML Model</h1>
-            <div class="success-message">
-                🎉 Success! The fuzzy logic model is hosted successfully on Vercel.
+            <div id="status" class="success-message">
+                Checking model status...
             </div>
             <p>
                 The model is ready to predict maternal care risks. You can test the API at the
                 <code>/predict</code> endpoint using a POST request with the required inputs.
             </p>
         </div>
+        <script>
+            async function checkModelStatus() {
+                try {
+                    const response = await fetch('/predict', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            CurrAgeGroup: 18,
+                            Place_of_Residence: 2,
+                            Education_level: 0,
+                            Wealth_index: 1,
+                            marital_status: 0,
+                            Distance_to_health: 3,
+                            Frequency_media_use: 0,
+                            Frequency_of_using_internet: 0,
+                            Antenatal_visits: 2,
+                            Postnatal_visits: 1
+                        })
+                    });
+                    const result = await response.json();
+                    if (response.ok && result.predicted_risk) {
+                        document.getElementById('status').innerText = 
+                            '🎉 Success! The fuzzy logic model is hosted and working correctly.';
+                    } else {
+                        throw new Error(result.error || 'Unknown error');
+                    }
+                } catch (error) {
+                    document.getElementById('status').className = 'error-message';
+                    document.getElementById('status').innerText = 
+                        '❌ Error: The model failed to respond correctly. Check the runtime logs for details.';
+                }
+            }
+            checkModelStatus();
+        </script>
     </body>
     </html>
     """
