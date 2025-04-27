@@ -5,7 +5,8 @@
         "use": "@vercel/python",
         "config": {
           "runtime": "python3.9",
-          "buildCommand": "python3.9 -m pip install -r requirements.txt && python3.9 -m compileall ."
+          "buildCommand": "python3.9 -m pip install -r requirements.txt && python3.9 -m compileall .",
+          "pythonVersion": "3.9"
         }
       }
     ],
@@ -25,8 +26,5 @@
         "methods": ["GET"],
         "dest": "model.py"
       }
-    ],
-    "python": {
-      "version": "3.9"
-    }
+    ]
   }
