@@ -1,5 +1,5 @@
 flask==2.3.3
-flask-cors==4.0.0  # Remove if not needed
+flask-cors==4.0.0
 numpy==1.26.4
-scikit-fuzzy==0.4.2
+scikit-fuzzy==0.4.1
 gunicorn==22.0.0
