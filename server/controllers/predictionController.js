@@ -1,8 +1,28 @@
 const { Mother, CHW, RiskAssessment, Alert, User } = require('../models');
 const { sendPushNotification } = require('../services/pushNotifications');
 
+exports.getAllRiskAssessments = async (req, res) => {
+  try {
+    const riskAssessments = await RiskAssessment.findAll({
+      include: [{
+        model: Mother,
+        as: 'mother',
+        attributes: ['firstName', 'lastName', 'email']
+      }],
+      order: [['createdAt', 'DESC']]
+    });
+
+    res.json({ data: riskAssessments });
+  } catch (error) {
+    console.error("Error in getAllRiskAssessments:", error);
+    res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+};
+
 exports.getRiskPrediction = async (req, res) => {
   // Receive only motherId and predicted_risk from the frontend
+
+  console.log(req.body);
   const { motherId, predicted_risk } = req.body;
   
   if (!motherId || !predicted_risk) {

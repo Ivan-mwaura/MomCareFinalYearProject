@@ -7,6 +7,7 @@ import {
   ScrollView,
   Modal,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import * as Animatable from 'react-native-animatable';
 import { ProgressChart } from "react-native-chart-kit";
@@ -19,7 +20,7 @@ import { ML_URL, BACKEND_URL } from "@env";
 const screenWidth = Dimensions.get("window").width;
 
 const RiskAssessment = () => {
-  const [riskScore, setRiskScore] = useState(65);
+  const [riskScore, setRiskScore] = useState(null);
   const [recommendations, setRecommendations] = useState([
     "Keep up with your check-ups, mama!",
     "Nourish yourself with love and care.",
@@ -31,6 +32,7 @@ const RiskAssessment = () => {
   const [isSummaryVisible, setIsSummaryVisible] = useState(false);
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [loading, setLoading] = useState(false);
   
   const assessmentQuestions = [
     { id: "1", question: "How often do you enjoy TV time?", options: ["Not at all", "Rarely", "Weekly"] },
@@ -43,6 +45,9 @@ const RiskAssessment = () => {
     { id: "8", question: "What keeps you busy?", options: ["Unemployed", "Employed", "Self-employed", "Student", "Retired", "Home Mama"] },
     { id: "9", question: "Where do you call home?", options: ["City", "Countryside"] },
   ];
+
+  console.log(ML_URL);
+  console.log(BACKEND_URL);
 
   const handleAnswer = (questionId, value) => {
     setAssessmentData((prev) => ({ ...prev, [questionId]: value }));
@@ -83,6 +88,7 @@ const RiskAssessment = () => {
   };
 
   const handleSubmit = async () => {
+    setLoading(true);
     try {
       const token = await AsyncStorage.getItem("token");
       const userData = await AsyncStorage.getItem("user");
@@ -102,30 +108,48 @@ const RiskAssessment = () => {
         Postnatal_visits: 0,
       };
 
-      const modelResponse = await axios.post(`${ML_URL}/predict`, modelInput, { timeout: 10000 });
-      const { predicted_risk, risk_value } = modelResponse.data;
+      let modelResponse;
+      try {
+        modelResponse = await axios.post(`${ML_URL}/predict`, modelInput, { timeout: 10000 });
+      } catch (err) {
+        setLoading(false);
+        console.error("Model error:", err.message);
+        alert("Sorry, we couldn't reach the risk model. Please check your connection and try again.");
+        return;
+      }
 
+      const { predicted_risk, risk_value } = modelResponse.data;
       console.log(modelResponse.data);
-      
-      // Enhanced recommendations based on risk level
-      const riskLevel = risk_value > 70 ? "High" : risk_value > 40 ? "Moderate" : "Low";
+      const riskLevel = risk_value >= 5 ? "High" : "Low";
       const newRecommendations = getRecommendations(riskLevel, risk_value);
-      
+
       setRiskScore(risk_value);
       setRecommendations(newRecommendations);
 
       const predictionPayload = { motherId: user.motherId ?? user.id, predicted_risk };
-      await axios.post(`{BACKEND_URL}/api/predictions`, predictionPayload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+
+      try {
+        await axios.post(`${BACKEND_URL}/api/predictions`, predictionPayload, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (err) {
+        console.error("Backend error:", err.message);
+        if (err.response && err.response.status === 401) {
+          alert("Your session has expired. Please log in again.");
+          // Optionally, redirect to login screen here
+        } else {
+          alert("Risk prediction was calculated, but saving to your profile failed. Please try again later.");
+        }
+      }
 
       setIsAssessmentModalVisible(false);
       setIsSummaryVisible(false);
       setCurrentStep(0);
       setAssessmentData({});
     } catch (error) {
-      console.error("Error submitting assessment:", error.message);
       alert("Oops! Something went wrong. Try again, mama.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -156,13 +180,13 @@ const RiskAssessment = () => {
 
     // Add personalized recommendations based on risk value
     const personalizedRecs = [];
-    if (riskValue > 80) {
+    if (riskValue > 8) {
       personalizedRecs.push("Consider additional specialist consultations");
     }
-    if (riskValue > 60) {
+    if (riskValue > 5) {
       personalizedRecs.push("Implement more frequent health monitoring");
     }
-    if (riskValue < 30) {
+    if (riskValue < 5) {
       personalizedRecs.push("Continue your excellent health practices");
     }
 
@@ -181,32 +205,46 @@ const RiskAssessment = () => {
       {/* Risk Overview */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Your Wellness Score</Text>
-        <Animatable.View
-          animation="fadeIn"
-          duration={800}
-          style={styles.riskCard}
-        >
-          <ProgressChart
-            data={{ data: [riskScore / 100] }}
-            width={100}
-            height={100}
-            strokeWidth={12}
-            radius={40}
-            chartConfig={{
-              backgroundGradientFrom: "#FFF",
-              backgroundGradientTo: "#FFF",
-              color: () => "#FF6B6B",
-            }}
-            hideLegend={true}
-          />
-          <View style={styles.riskInfo}>
-            <Text style={styles.riskLabel}>Risk Level</Text>
-            <Text style={styles.riskLevel}>
-              { riskScore && riskScore > 70 ? "High" : riskScore > 40 ? "Moderate" : "Low"}
-            </Text>
-            <Text style={styles.riskScore}>{riskScore}%</Text>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FF6B6B" />
+            <Text style={{ marginTop: 12, color: '#FF6B6B', fontWeight: '600' }}>Assessing your risk...</Text>
           </View>
-        </Animatable.View>
+        ) : (riskScore !== null && riskScore !== undefined) ? (
+          <Animatable.View
+            animation="fadeIn"
+            duration={800}
+            style={styles.riskCard}
+          >
+            <ProgressChart
+              data={{ data: [riskScore / 100] }}
+              width={100}
+              height={100}
+              strokeWidth={12}
+              radius={40}
+              chartConfig={{
+                backgroundGradientFrom: "#FFF",
+                backgroundGradientTo: "#FFF",
+                color: () => "#FF6B6B",
+              }}
+              hideLegend={true}
+            />
+            <View style={styles.riskInfo}>
+              <Text style={styles.riskLabel}>Risk Level</Text>
+              <Text style={styles.riskLevel}>
+                { riskScore > 5 ? "High" : "Low"}
+              </Text>
+              <Text style={styles.riskScore}>{riskScore}%</Text>
+            </View>
+          </Animatable.View>
+        ) : (
+          <View style={styles.placeholderContainer}>
+            <Ionicons name="alert-circle" size={48} color="#FF6B6B" style={{ marginBottom: 10 }} />
+            <Text style={styles.placeholderText}>
+              You haven't taken a risk assessment yet. Tap below to get started and see your wellness score!
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Take Assessment Button */}
@@ -501,6 +539,21 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#FF6B6B',
     marginLeft: 5,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 });
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import axios from '../../utils/axiosConfig';
 import { useToast } from '../../Components/ui/use-toast';
@@ -44,6 +43,8 @@ const AppointmentRecord = () => {
   const [appointmentRecords, setAppointmentRecords] = useState([]);
   const [expandedRecords, setExpandedRecords] = useState({});
   const searchRef = useRef(null);
+  const [formErrors, setFormErrors] = useState({});
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -150,57 +151,292 @@ const AppointmentRecord = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!selectedMother) {
-      toast({ title: 'Error', description: 'Please select a mother before submitting.' });
-      return;
+  const validateForm = () => {
+    const errors = {};
+    
+    // Visit Details validation
+    if (!formData.appointmentDate) {
+      errors.appointmentDate = 'Appointment date is required';
+    } else {
+      const appointmentDate = new Date(formData.appointmentDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (appointmentDate < today) {
+        errors.appointmentDate = 'Appointment date cannot be in the past';
+      }
     }
+
     if (!formData.appointmentTime) {
-      toast({ title: 'Error', description: 'Appointment Time is required.' });
+      errors.appointmentTime = 'Appointment time is required';
+    } else if (!/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(formData.appointmentTime)) {
+      errors.appointmentTime = 'Invalid time format (use HH:mm)';
+    }
+
+    if (!formData.visitType) {
+      errors.visitType = 'Visit type is required';
+    }
+
+    // Vital Signs validation
+    if (activeTab === 'vitalSigns') {
+      if (formData.bloodPressure && !/^\d{2,3}\/\d{2,3}$/.test(formData.bloodPressure)) {
+        errors.bloodPressure = 'Invalid blood pressure format (e.g., 120/80)';
+      }
+
+      if (formData.heartRate) {
+        const hr = Number(formData.heartRate);
+        if (isNaN(hr) || hr < 40 || hr > 200) {
+          errors.heartRate = 'Heart rate must be between 40 and 200 bpm';
+        }
+      }
+
+      if (formData.temperature) {
+        const temp = Number(formData.temperature);
+        if (isNaN(temp) || temp < 35 || temp > 42) {
+          errors.temperature = 'Temperature must be between 35°C and 42°C';
+        }
+      }
+
+      if (formData.weight) {
+        const weight = Number(formData.weight);
+        if (isNaN(weight) || weight < 30 || weight > 200) {
+          errors.weight = 'Weight must be between 30 and 200 kg';
+        }
+      }
+    }
+
+    // Obstetric validation
+    if (activeTab === 'obstetric') {
+      if (formData.fundalHeight) {
+        const fh = Number(formData.fundalHeight);
+        if (isNaN(fh) || fh < 0 || fh > 50) {
+          errors.fundalHeight = 'Fundal height must be between 0 and 50 cm';
+        }
+      }
+
+      if (formData.fetalHeartRate) {
+        const fhr = Number(formData.fetalHeartRate);
+        if (isNaN(fhr) || fhr < 110 || fhr > 160) {
+          errors.fetalHeartRate = 'Fetal heart rate must be between 110 and 160 bpm';
+        }
+      }
+
+      if (formData.gestationalAge) {
+        const ga = Number(formData.gestationalAge);
+        if (isNaN(ga) || ga < 0 || ga > 45) {
+          errors.gestationalAge = 'Gestational age must be between 0 and 45 weeks';
+        }
+      }
+    }
+
+    // Clinical Observations validation
+    if (activeTab === 'clinical') {
+      if (!formData.physicalFindings?.trim()) {
+        errors.physicalFindings = 'Physical findings are required';
+      }
+      if (!formData.symptoms?.trim()) {
+        errors.symptoms = 'Symptoms are required';
+      }
+    }
+
+    // Lab & Diagnostics validation
+    if (activeTab === 'lab' && formData.labResults?.trim()) {
+      if (formData.labResults.length > 1000) {
+        errors.labResults = 'Lab results must not exceed 1000 characters';
+      }
+    }
+
+    // Medications validation
+    if (activeTab === 'medications' && formData.prescribedMedications?.trim()) {
+      if (formData.prescribedMedications.length > 1000) {
+        errors.prescribedMedications = 'Prescribed medications must not exceed 1000 characters';
+      }
+    }
+
+    // Follow-Up validation
+    if (activeTab === 'followUp') {
+      if (formData.nextAppointmentDate) {
+        const nextDate = new Date(formData.nextAppointmentDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (nextDate < today) {
+          errors.nextAppointmentDate = 'Next appointment date cannot be in the past';
+        }
+      }
+      if (!formData.careRecommendations?.trim()) {
+        errors.careRecommendations = 'Care recommendations are required';
+      }
+    }
+
+    // Notes validation
+    if (activeTab === 'notes') {
+      if (!formData.doctorsObservations?.trim()) {
+        errors.doctorsObservations = 'Doctor\'s observations are required';
+      }
+      if (!formData.patientConcerns?.trim()) {
+        errors.patientConcerns = 'Patient concerns are required';
+      }
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!selectedMother) {
+      toast({
+        title: '❌ Error',
+        description: 'Please select a mother before submitting.',
+        variant: 'destructive',
+      });
       return;
     }
+
+    // Validate all sections before submitting
+    let isValid = true;
+    const allTabs = ['visitDetails', 'vitalSigns', 'obstetric', 'clinical', 'lab', 'medications', 'followUp', 'notes'];
+    const currentTab = activeTab;
+    
+    // Temporarily switch to each tab to validate its fields
+    for (const tab of allTabs) {
+      setActiveTab(tab);
+      if (!validateForm()) {
+        isValid = false;
+        break;
+      }
+    }
+    
+    // Restore the original active tab
+    setActiveTab(currentTab);
+    
+    if (!isValid) {
+      setShowErrorModal(true);
+      return;
+    }
+
     setSubmitting(true);
     const recordData = { ...formData, motherId: selectedMother.id };
-    axios
-      .post(`${import.meta.env.VITE_BACKEND_URL}/appointmentRecords`, recordData, {
-        headers: { Authorization: `Bearer ${Cookies.get('token')}` },
-      })
-      .then((response) => {
-        toast({ title: 'Success', description: 'Appointment record saved successfully.' });
-        setAppointmentRecords((prev) => [...prev, response.data.data]);
-        setFormData({
-          appointmentDate: '',
-          appointmentTime: '',
-          visitType: '',
-          attended: false,
-          bloodPressure: '',
-          heartRate: '',
-          temperature: '',
-          weight: '',
-          fundalHeight: '',
-          fetalHeartRate: '',
-          gestationalAge: '',
-          physicalFindings: '',
-          symptoms: '',
-          labResults: '',
-          ultrasoundSummary: '',
-          prescribedMedications: '',
-          interventions: '',
-          nextAppointmentDate: '',
-          careRecommendations: '',
-          adherenceNotes: '',
-          doctorsObservations: '',
-          patientConcerns: '',
-        });
-      })
-      .catch((error) => {
+
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/appointmentRecords`,
+        recordData,
+        {
+          headers: { Authorization: `Bearer ${Cookies.get('token')}` },
+        }
+      );
+
+      toast({
+        title: '✅ Success',
+        description: 'Appointment record saved successfully.',
+        variant: 'default',
+      });
+
+      // Update the records list with the new record
+      setAppointmentRecords((prev) => [response.data.data, ...prev]);
+
+      // Reset form
+      setFormData({
+        appointmentDate: '',
+        appointmentTime: '',
+        visitType: '',
+        attended: false,
+        bloodPressure: '',
+        heartRate: '',
+        temperature: '',
+        weight: '',
+        fundalHeight: '',
+        fetalHeartRate: '',
+        gestationalAge: '',
+        physicalFindings: '',
+        symptoms: '',
+        labResults: '',
+        ultrasoundSummary: '',
+        prescribedMedications: '',
+        interventions: '',
+        nextAppointmentDate: '',
+        careRecommendations: '',
+        adherenceNotes: '',
+        doctorsObservations: '',
+        patientConcerns: '',
+      });
+      setFormErrors({});
+    } catch (error) {
+      console.error('Error saving appointment record:', error);
+      
+      if (error.response) {
+        const { status, data } = error.response;
+        
+        // Handle validation errors (400)
+        if (status === 400) {
+          if (data.errors) {
+            setFormErrors(data.errors);
+            setShowErrorModal(true);
+          } else {
+            toast({
+              title: '❌ Validation Error',
+              description: data.message || 'Please check all required fields.',
+              variant: 'destructive',
+            });
+          }
+          return;
+        }
+        
+        // Handle duplicate appointment errors (409)
+        if (status === 409) {
+          toast({
+            title: '❌ Duplicate Appointment',
+            description: data.message || 'An appointment already exists at this time.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        
+        // Handle unauthorized errors (401)
+        if (status === 401) {
+          toast({
+            title: '❌ Unauthorized',
+            description: 'You are not authorized to perform this action.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        
+        // Handle server errors (500)
+        if (status === 500) {
+          toast({
+            title: '❌ Server Error',
+            description: data.message || 'An unexpected error occurred. Please try again later.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        
+        // Handle other errors
         toast({
-          title: 'Error',
-          description: error.response?.data?.message || 'Failed to save appointment record.',
+          title: '❌ Error',
+          description: data.message || 'Failed to save appointment record.',
+          variant: 'destructive',
         });
-      })
-      .finally(() => setSubmitting(false));
+      } else if (error.request) {
+        // Handle network errors
+        toast({
+          title: '❌ Network Error',
+          description: 'No response from server. Please check your internet connection.',
+          variant: 'destructive',
+        });
+      } else {
+        // Handle other errors
+        toast({
+          title: '❌ Error',
+          description: 'An unexpected error occurred. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const toggleRecordExpansion = (recordId) => {
@@ -225,6 +461,40 @@ const AppointmentRecord = () => {
     if (!query) return text;
     const regex = new RegExp(`(${query})`, 'gi');
     return text.replace(regex, '<span class="highlight">$1</span>');
+  };
+
+  const ErrorModal = ({ errors, onClose }) => {
+    return (
+      <div className="error-modal" style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000
+      }}>
+        <div className="modal-content">
+          <div className="error-header">
+            <h2>Please Fix the Following Errors</h2>
+            <button className="close-btn" onClick={onClose}>&times;</button>
+          </div>
+          <div className="error-list">
+            {Object.entries(errors).map(([field, error]) => (
+              <div key={field} className="error-item">
+                <strong>{field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}:</strong> {error}
+              </div>
+            ))}
+          </div>
+          <div className="error-actions">
+            <button onClick={onClose}>Close</button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (loading && !motherResults.length) {
@@ -291,7 +561,7 @@ const AppointmentRecord = () => {
             <div className="tip-card">
               <span className="tip-icon">📅</span>
               <h3>Schedule Visits</h3>
-              <p>Enter a name or email to start recording a mother’s appointment details.</p>
+              <p>Enter a name or email to start recording a mother's appointment details.</p>
             </div>
             <div className="tip-card">
               <span className="tip-icon">🩺</span>
@@ -369,9 +639,11 @@ const AppointmentRecord = () => {
                           name="appointmentDate"
                           value={formData.appointmentDate}
                           onChange={handleInputChange}
+                          className={formErrors.appointmentDate ? 'error' : ''}
                           required
                         />
                       </label>
+                      {formErrors.appointmentDate && <span className="error-message">{formErrors.appointmentDate}</span>}
                       <label>
                         Appointment Time
                         <input
@@ -379,15 +651,18 @@ const AppointmentRecord = () => {
                           name="appointmentTime"
                           value={formData.appointmentTime}
                           onChange={handleInputChange}
+                          className={formErrors.appointmentTime ? 'error' : ''}
                           required
                         />
                       </label>
+                      {formErrors.appointmentTime && <span className="error-message">{formErrors.appointmentTime}</span>}
                       <label>
                         Visit Type
                         <select
                           name="visitType"
                           value={formData.visitType}
                           onChange={handleInputChange}
+                          className={formErrors.visitType ? 'error' : ''}
                           required
                         >
                           <option value="">Select Type</option>
@@ -396,16 +671,19 @@ const AppointmentRecord = () => {
                           <option value="Follow-up">Follow-Up</option>
                         </select>
                       </label>
+                      {formErrors.visitType && <span className="error-message">{formErrors.visitType}</span>}
                       <label className="checkbox-label">
                         <input
                           type="checkbox"
                           name="attended"
                           checked={formData.attended}
                           onChange={handleInputChange}
+                          className={formErrors.attended ? 'error' : ''}
                         />
                         <span className="checkbox-indicator"></span>
                         <span>Attended</span>
                       </label>
+                      {formErrors.attended && <span className="error-message">{formErrors.attended}</span>}
                     </div>
                   </div>
                 )}
@@ -421,10 +699,12 @@ const AppointmentRecord = () => {
                           name="bloodPressure"
                           value={formData.bloodPressure}
                           onChange={handleInputChange}
+                          className={formErrors.bloodPressure ? 'error' : ''}
                           placeholder="e.g., 120/80"
                           required
                         />
                       </label>
+                      {formErrors.bloodPressure && <span className="error-message">{formErrors.bloodPressure}</span>}
                       <label>
                         Heart Rate (bpm)
                         <input
@@ -432,10 +712,12 @@ const AppointmentRecord = () => {
                           name="heartRate"
                           value={formData.heartRate}
                           onChange={handleInputChange}
+                          className={formErrors.heartRate ? 'error' : ''}
                           placeholder="e.g., 78"
                           required
                         />
                       </label>
+                      {formErrors.heartRate && <span className="error-message">{formErrors.heartRate}</span>}
                       <label>
                         Temperature (°C)
                         <input
@@ -444,10 +726,12 @@ const AppointmentRecord = () => {
                           name="temperature"
                           value={formData.temperature}
                           onChange={handleInputChange}
+                          className={formErrors.temperature ? 'error' : ''}
                           placeholder="e.g., 36.5"
                           required
                         />
                       </label>
+                      {formErrors.temperature && <span className="error-message">{formErrors.temperature}</span>}
                       <label>
                         Weight (kg)
                         <input
@@ -455,10 +739,12 @@ const AppointmentRecord = () => {
                           name="weight"
                           value={formData.weight}
                           onChange={handleInputChange}
+                          className={formErrors.weight ? 'error' : ''}
                           placeholder="e.g., 65"
                           required
                         />
                       </label>
+                      {formErrors.weight && <span className="error-message">{formErrors.weight}</span>}
                     </div>
                   </div>
                 )}
@@ -474,10 +760,12 @@ const AppointmentRecord = () => {
                           name="fundalHeight"
                           value={formData.fundalHeight}
                           onChange={handleInputChange}
+                          className={formErrors.fundalHeight ? 'error' : ''}
                           placeholder="e.g., 30"
                           required
                         />
                       </label>
+                      {formErrors.fundalHeight && <span className="error-message">{formErrors.fundalHeight}</span>}
                       <label>
                         Fetal Heart Rate (bpm)
                         <input
@@ -485,10 +773,12 @@ const AppointmentRecord = () => {
                           name="fetalHeartRate"
                           value={formData.fetalHeartRate}
                           onChange={handleInputChange}
+                          className={formErrors.fetalHeartRate ? 'error' : ''}
                           placeholder="e.g., 140"
                           required
                         />
                       </label>
+                      {formErrors.fetalHeartRate && <span className="error-message">{formErrors.fetalHeartRate}</span>}
                       <label>
                         Gestational Age (weeks)
                         <input
@@ -496,10 +786,12 @@ const AppointmentRecord = () => {
                           name="gestationalAge"
                           value={formData.gestationalAge}
                           onChange={handleInputChange}
+                          className={formErrors.gestationalAge ? 'error' : ''}
                           placeholder="e.g., 28"
                           required
                         />
                       </label>
+                      {formErrors.gestationalAge && <span className="error-message">{formErrors.gestationalAge}</span>}
                     </div>
                   </div>
                 )}
@@ -514,20 +806,24 @@ const AppointmentRecord = () => {
                           name="physicalFindings"
                           value={formData.physicalFindings}
                           onChange={handleInputChange}
+                          className={formErrors.physicalFindings ? 'error' : ''}
                           placeholder="Describe findings..."
                           required
                         />
                       </label>
+                      {formErrors.physicalFindings && <span className="error-message">{formErrors.physicalFindings}</span>}
                       <label>
                         Symptom Review
                         <textarea
                           name="symptoms"
                           value={formData.symptoms}
                           onChange={handleInputChange}
+                          className={formErrors.symptoms ? 'error' : ''}
                           placeholder="Patient-reported symptoms..."
                           required
                         />
                       </label>
+                      {formErrors.symptoms && <span className="error-message">{formErrors.symptoms}</span>}
                     </div>
                   </div>
                 )}
@@ -542,20 +838,24 @@ const AppointmentRecord = () => {
                           name="labResults"
                           value={formData.labResults}
                           onChange={handleInputChange}
+                          className={formErrors.labResults ? 'error' : ''}
                           placeholder="e.g., Hemoglobin, blood glucose..."
                           required
                         />
                       </label>
+                      {formErrors.labResults && <span className="error-message">{formErrors.labResults}</span>}
                       <label>
                         Ultrasound Summary
                         <textarea
                           name="ultrasoundSummary"
                           value={formData.ultrasoundSummary}
                           onChange={handleInputChange}
+                          className={formErrors.ultrasoundSummary ? 'error' : ''}
                           placeholder="Summary of ultrasound findings..."
                           required
                         />
                       </label>
+                      {formErrors.ultrasoundSummary && <span className="error-message">{formErrors.ultrasoundSummary}</span>}
                     </div>
                   </div>
                 )}
@@ -570,20 +870,24 @@ const AppointmentRecord = () => {
                           name="prescribedMedications"
                           value={formData.prescribedMedications}
                           onChange={handleInputChange}
+                          className={formErrors.prescribedMedications ? 'error' : ''}
                           placeholder="Medications, dosage and frequency..."
                           required
                         />
                       </label>
+                      {formErrors.prescribedMedications && <span className="error-message">{formErrors.prescribedMedications}</span>}
                       <label>
                         Interventions
                         <textarea
                           name="interventions"
                           value={formData.interventions}
                           onChange={handleInputChange}
+                          className={formErrors.interventions ? 'error' : ''}
                           placeholder="Treatments or procedures performed..."
                           required
                         />
                       </label>
+                      {formErrors.interventions && <span className="error-message">{formErrors.interventions}</span>}
                     </div>
                   </div>
                 )}
@@ -599,29 +903,35 @@ const AppointmentRecord = () => {
                           name="nextAppointmentDate"
                           value={formData.nextAppointmentDate}
                           onChange={handleInputChange}
+                          className={formErrors.nextAppointmentDate ? 'error' : ''}
                           required
                         />
                       </label>
+                      {formErrors.nextAppointmentDate && <span className="error-message">{formErrors.nextAppointmentDate}</span>}
                       <label>
                         Care Recommendations
                         <textarea
                           name="careRecommendations"
                           value={formData.careRecommendations}
                           onChange={handleInputChange}
+                          className={formErrors.careRecommendations ? 'error' : ''}
                           placeholder="Advice on lifestyle, diet, additional tests..."
                           required
                         />
                       </label>
+                      {formErrors.careRecommendations && <span className="error-message">{formErrors.careRecommendations}</span>}
                       <label>
                         Notes on Adherence
                         <textarea
                           name="adherenceNotes"
                           value={formData.adherenceNotes}
                           onChange={handleInputChange}
+                          className={formErrors.adherenceNotes ? 'error' : ''}
                           placeholder="Comments on patient compliance..."
                           required
                         />
                       </label>
+                      {formErrors.adherenceNotes && <span className="error-message">{formErrors.adherenceNotes}</span>}
                     </div>
                   </div>
                 )}
@@ -636,20 +946,24 @@ const AppointmentRecord = () => {
                           name="doctorsObservations"
                           value={formData.doctorsObservations}
                           onChange={handleInputChange}
+                          className={formErrors.doctorsObservations ? 'error' : ''}
                           placeholder="Any further observations or concerns..."
                           required
                         />
                       </label>
+                      {formErrors.doctorsObservations && <span className="error-message">{formErrors.doctorsObservations}</span>}
                       <label>
                         Patient Concerns
                         <textarea
                           name="patientConcerns"
                           value={formData.patientConcerns}
                           onChange={handleInputChange}
+                          className={formErrors.patientConcerns ? 'error' : ''}
                           placeholder="Patient's questions or concerns..."
                           required
                         />
                       </label>
+                      {formErrors.patientConcerns && <span className="error-message">{formErrors.patientConcerns}</span>}
                     </div>
                   </div>
                 )}
@@ -781,6 +1095,13 @@ const AppointmentRecord = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {showErrorModal && (
+        <ErrorModal 
+          errors={formErrors} 
+          onClose={() => setShowErrorModal(false)} 
+        />
       )}
     </div>
   );

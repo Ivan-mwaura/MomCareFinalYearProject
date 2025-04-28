@@ -6,7 +6,23 @@ exports.createDoctor = async (req, res) => {
   try {
     const { password, ...doctorData } = req.body;
 
-    console.log(password)
+    // Check if doctor with same email exists
+    const existingDoctor = await Doctor.findOne({ where: { email: doctorData.email } });
+    if (existingDoctor) {
+      return res.status(409).json({ 
+        message: "A doctor with this email already exists",
+        errors: { email: "This email is already registered. Please use a different email address." }
+      });
+    }
+
+    // Check if doctor with same license number exists
+    const existingLicense = await Doctor.findOne({ where: { licenseNumber: doctorData.licenseNumber } });
+    if (existingLicense) {
+      return res.status(409).json({ 
+        message: "A doctor with this license number already exists",
+        errors: { licenseNumber: "This license number is already registered." }
+      });
+    }
     
     // Create Doctor record
     const doctor = await Doctor.create(doctorData);
@@ -32,6 +48,35 @@ exports.createDoctor = async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating doctor:", error);
+    
+    // Handle Sequelize validation errors
+    if (error.name === 'SequelizeValidationError') {
+      const validationErrors = {};
+      error.errors.forEach(err => {
+        validationErrors[err.path] = err.message;
+      });
+      return res.status(400).json({ 
+        message: "Validation error",
+        errors: validationErrors
+      });
+    }
+    
+    // Handle other specific errors
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      if (error.errors.some(err => err.path === 'email')) {
+        return res.status(409).json({ 
+          message: "A doctor with this email already exists",
+          errors: { email: "This email is already registered. Please use a different email address." }
+        });
+      }
+      if (error.errors.some(err => err.path === 'licenseNumber')) {
+        return res.status(409).json({ 
+          message: "A doctor with this license number already exists",
+          errors: { licenseNumber: "This license number is already registered." }
+        });
+      }
+    }
+    
     res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };

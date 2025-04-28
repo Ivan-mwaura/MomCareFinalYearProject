@@ -4,14 +4,26 @@ const bcrypt = require('bcryptjs');
 
 exports.registerCHW = async (req, res) => {
   try {
-    const { password, ...chwData } = req.body;
+    const { password, email, ...chwData } = req.body;
 
     if (!password) {
       return res.status(400).json({ message: 'Password is required for CHW registration' });
     }
 
+    // Check if email already exists in User table
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email already exists. Please use a different email address.' });
+    }
+
+    // Check if email already exists in CHW table
+    const existingCHW = await CHW.findOne({ where: { email } });
+    if (existingCHW) {
+      return res.status(400).json({ message: 'Email already exists. Please use a different email address.' });
+    }
+
     // Create CHW record
-    const chw = await CHW.create(chwData);
+    const chw = await CHW.create({ ...chwData, email });
 
     // Create corresponding User record
     const hashedPassword = await bcrypt.hash(password, 10);

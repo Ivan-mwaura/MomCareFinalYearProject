@@ -43,16 +43,53 @@ exports.searchMothers = async (req, res) => {
 // Register a new Mother (creates a record in both the mothers table and the users table)
 exports.registerMother = async (req, res) => {
   try {
-    // Expect req.body to include mother's details plus a password for the user account.
-    const { password, ...motherData } = req.body;
-  
-    // Create Mother record
-    const mother = await Mother.create(motherData);
-  
-    // Create User account for the mother
+    const { email, password, nationalId, ...otherData } = req.body;
+
+    // Check for existing mother with same email or national ID
+    const existingMother = await Mother.findOne({
+      where: {
+        [Op.or]: [
+          { email: email },
+          { nationalId: nationalId }
+        ]
+      }
+    });
+
+    if (existingMother) {
+      if (existingMother.email === email) {
+        return res.status(409).json({ 
+          error: 'Email already registered',
+          field: 'email'
+        });
+      }
+      if (existingMother.nationalId === nationalId) {
+        return res.status(409).json({ 
+          error: 'National ID already registered',
+          field: 'nationalId'  
+        });
+      }
+    }
+
+    // Check if user exists with same email
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(409).json({ 
+        error: 'Email already registered as a user',
+        field: 'email'
+      });
+    }
+
+    // Create mother record
+    const mother = await Mother.create({
+      email,
+      nationalId,
+      ...otherData
+    });
+
+    // Create user account
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({
-      email: mother.email,
+    await User.create({
+      email,
       password: hashedPassword,
       role: 'mother',
       motherId: mother.id,
@@ -60,35 +97,90 @@ exports.registerMother = async (req, res) => {
       lastName: mother.lastName,
       phone: mother.phone
     });
-  
-    res.status(201).json({ mother, user });
+
+    res.status(201).json({
+      message: 'Mother registered successfully',
+      mother: {
+        id: mother.id,
+        email: mother.email,
+        firstName: mother.firstName,
+        lastName: mother.lastName
+      }
+    });
+
   } catch (error) {
-    console.error("Error in registerMother:", error);
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    if (error.name === 'SequelizeValidationError') {
+      return res.status(400).json({
+        error: error.errors[0].message,
+        field: error.errors[0].path
+      });
+    }
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      const field = error.errors[0].path;
+      const message = field === 'email' ? 
+        'Email already registered' : 
+        field === 'nationalId' ? 
+          'National ID already registered' : 
+          'Duplicate value not allowed';
+      
+      return res.status(409).json({
+        error: message,
+        field: field
+      });
+    }
+    console.error('Error registering mother:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
 // Get all Mothers with their assigned CHW's name (via association)
 exports.getMothers = async (req, res) => {
   try {
+    console.log('Fetching mothers with risk assessments...');
+    
+    // First, let's check if we can get risk assessments directly
+    const riskAssessments = await RiskAssessment.findAll({
+      limit: 5
+    });
+    console.log('Risk Assessments:', JSON.stringify(riskAssessments, null, 2));
+
     const mothers = await Mother.findAll({
-      include: [{
-        model: CHW,
-        as: 'chw',
-        attributes: ['firstName', 'lastName']
-      }]
+      include: [
+        {
+          model: CHW,
+          as: 'chw',
+          attributes: ['firstName', 'lastName']
+        },
+        {
+          model: RiskAssessment,
+          as: 'riskAssessmentsRecords',
+          attributes: ['riskLevel', 'createdAt'],
+          separate: true,
+          order: [['createdAt', 'DESC']],
+          limit: 1
+        }
+      ]
     });
 
-    // Format the output to display the CHW's full name
+    //console.log('Raw mothers data:', JSON.stringify(mothers, null, 2));
+
+    // Format the output to display the CHW's full name and include risk level
     const formattedMothers = mothers.map((m) => {
       const mData = m.toJSON();
       mData.assignedCHW = mData.chw 
         ? `${mData.chw.firstName} ${mData.chw.lastName}` 
         : null;
+      // Add risk level from the latest risk assessment
+      mData.riskLevel = mData.riskAssessmentsRecords && mData.riskAssessmentsRecords.length > 0
+        ? mData.riskAssessmentsRecords[0].riskLevel
+        : null;
+      // Clean up the response by removing nested objects
       delete mData.chw;
+      delete mData.riskAssessmentsRecords;
       return mData;
     });
     
+    console.log('Formatted mothers data:', JSON.stringify(formattedMothers, null, 2));
     res.json({ data: formattedMothers });
   } catch (error) {
     console.error("Error in getMothers:", error);

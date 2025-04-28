@@ -32,6 +32,10 @@ const Doctors = () => {
   const [isSubmitting, setIsSubmitting] = useState(false); // <-- Add this state
   const { toast } = useToast();
   const [newDoctor, setNewDoctor] = useState(INITIAL_DOCTOR_STATE);
+  const [formErrors, setFormErrors] = useState({});
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const totalSteps = 2;
 
   useEffect(() => {
     const fetchDoctors = async () => {
@@ -80,10 +84,95 @@ const Doctors = () => {
 
   //console.log(newDoctor)
 
+  const validateForm = () => {
+    const errors = {};
+    
+    // Personal Information validation
+    if (!newDoctor.firstName?.trim()) {
+      errors.firstName = 'First name is required';
+    } else if (newDoctor.firstName.length < 2) {
+      errors.firstName = 'First name must be at least 2 characters';
+    }
+    
+    if (!newDoctor.lastName?.trim()) {
+      errors.lastName = 'Last name is required';
+    } else if (newDoctor.lastName.length < 2) {
+      errors.lastName = 'Last name must be at least 2 characters';
+    }
+    
+    if (!newDoctor.phone?.trim()) {
+      errors.phone = 'Phone number is required';
+    } else if (!/^\+?[\d\s-]{10,}$/.test(newDoctor.phone)) {
+      errors.phone = 'Please enter a valid phone number';
+    }
+    
+    if (!newDoctor.email?.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newDoctor.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+    
+    if (!editingDoctor && !newDoctor.password?.trim()) {
+      errors.password = 'Password is required';
+    } else if (newDoctor.password && newDoctor.password.length < 8) {
+      errors.password = 'Password must be at least 8 characters';
+    } else if (newDoctor.password && !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/.test(newDoctor.password)) {
+      errors.password = 'Password must contain at least one uppercase letter, one lowercase letter, one number and one special character';
+    }
+    
+    // Professional Details validation
+    if (!newDoctor.hospitalName?.trim()) {
+      errors.hospitalName = 'Hospital name is required';
+    }
+    
+    if (!newDoctor.department?.trim()) {
+      errors.department = 'Department is required';
+    }
+    
+    if (!newDoctor.licenseNumber?.trim()) {
+      errors.licenseNumber = 'License number is required';
+    }
+    
+    if (!newDoctor.yearsOfExperience) {
+      errors.yearsOfExperience = 'Years of experience is required';
+    } else if (isNaN(newDoctor.yearsOfExperience) || newDoctor.yearsOfExperience < 0) {
+      errors.yearsOfExperience = 'Years of experience must be a positive number';
+    }
+    
+    if (!newDoctor.qualifications?.trim()) {
+      errors.qualifications = 'Qualifications are required';
+    }
+    
+    if (!newDoctor.status) {
+      errors.status = 'Status is required';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleNextStep = () => {
+    if (currentStep < totalSteps) {
+      setCurrentStep(prev => prev + 1);
+    }
+  };
+
+  const handlePrevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(prev => prev - 1);
+    }
+  };
+
   const handleFormSubmit = useCallback(
     async (e) => {
       e.preventDefault();
-      setIsSubmitting(true); // <-- Set submitting state to true
+      
+      if (!validateForm()) {
+        setShowErrorModal(true);
+        return;
+      }
+      
+      setIsSubmitting(true);
       try {
         const response = editingDoctor
           ? await axios.put(`${import.meta.env.VITE_BACKEND_URL}/doctors/${editingDoctor.id}`, newDoctor, {
@@ -109,14 +198,48 @@ const Doctors = () => {
         setShowForm(false);
         setNewDoctor(INITIAL_DOCTOR_STATE);
         setEditingDoctor(null);
+        setFormErrors({});
+        setCurrentStep(1);
       } catch (err) {
-        console.log(err)
+        console.error("Error submitting form:", err);
+        const backendErrors = {};
+        
+        // Handle specific error cases
+        if (err.response?.status === 400) {
+          // Handle validation errors from backend
+          if (err.response.data.errors) {
+            Object.entries(err.response.data.errors).forEach(([field, message]) => {
+              backendErrors[field] = message;
+            });
+          } else {
+            backendErrors.general = err.response.data.message || 'Please check your input and try again.';
+          }
+        } else if (err.response?.status === 401) {
+          backendErrors.auth = 'Your session has expired. Please log in again.';
+        } else if (err.response?.status === 403) {
+          backendErrors.auth = 'You do not have permission to perform this action.';
+        } else if (err.response?.status === 409) {
+          // Handle duplicate email/license number errors
+          if (err.response.data.errors) {
+            Object.entries(err.response.data.errors).forEach(([field, message]) => {
+              backendErrors[field] = message;
+            });
+          } else {
+            backendErrors.general = err.response.data.message || 'A duplicate record was found.';
+          }
+        } else {
+          backendErrors.general = err.response?.data?.message || 'An unexpected error occurred. Please try again.';
+        }
+        
+        setFormErrors(backendErrors);
+        setShowErrorModal(true);
+        
         toast({
           title: "❌ Error",
-          description: err.response?.data?.message || "An error occurred."
+          description: err.response?.data?.message || "An error occurred while saving the doctor's information."
         });
       } finally {
-        setIsSubmitting(false); // <-- Set submitting state to false in finally block
+        setIsSubmitting(false);
       }
     },
     [newDoctor, editingDoctor, toast]
@@ -134,6 +257,7 @@ const Doctors = () => {
     setShowForm(true);
     setEditingDoctor(null);
     setNewDoctor(INITIAL_DOCTOR_STATE);
+    setCurrentStep(1);
   }, []);
 
   const handleEditDoctor = useCallback((doctor) => {
@@ -153,6 +277,7 @@ const Doctors = () => {
       status: doctor.status,
       searchQuery: ""
     });
+    setCurrentStep(1);
   }, []);
 
   const handleNextPage = useCallback(() => {
@@ -162,6 +287,40 @@ const Doctors = () => {
   const handlePreviousPage = useCallback(() => {
     if (currentPage > 1) setCurrentPage((prev) => prev - 1);
   }, [currentPage]);
+
+  const ErrorModal = ({ errors, onClose }) => {
+    return (
+      <div className="error-modal" style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000
+      }}>
+        <div className="modal-content">
+          <div className="error-header">
+            <h2>Please Fix the Following Errors</h2>
+            <button className="close-btn" onClick={onClose}>&times;</button>
+          </div>
+          <div className="error-list">
+            {Object.entries(errors).map(([field, error]) => (
+              <div key={field} className="error-item">
+                <strong>{field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}:</strong> {error}
+              </div>
+            ))}
+          </div>
+          <div className="error-actions">
+            <button onClick={onClose}>Close</button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   if (loading) {
     return <DoctorsSkeleton />;
@@ -260,143 +419,219 @@ const Doctors = () => {
       {showForm && (
         <div className="modal">
           <div className="modal-content">
-            <h2>{editingDoctor ? "Edit Doctor" : "Add New Doctor"}</h2>
-            <form onSubmit={handleFormSubmit}>
-              <div className="form-grid">
-                <div className="form-section">
+            <div className="modal-header">
+              <h2>{editingDoctor ? "Edit Doctor" : "Add New Doctor"}</h2>
+              <button className="close-button" onClick={() => {
+                setShowForm(false);
+                setNewDoctor(INITIAL_DOCTOR_STATE);
+                setEditingDoctor(null);
+                setFormErrors({});
+                setCurrentStep(1);
+              }}>×</button>
+            </div>
+            <form onSubmit={handleFormSubmit} className="doctor-form">
+              <div className="form-steps">
+                <div className={`form-step ${currentStep === 1 ? 'active' : ''}`}>
                   <h3>Personal Information</h3>
-                  <label>
-                    First Name
-                    <input
-                      type="text"
-                      name="firstName"
-                      value={newDoctor.firstName}
-                      onChange={handleFormChange}
-                      required
-                    />
-                  </label>
-                  <label>
-                    Last Name
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={newDoctor.lastName}
-                      onChange={handleFormChange}
-                      required
-                    />
-                  </label>
-                  <label>
-                    Phone
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={newDoctor.phone}
-                      onChange={handleFormChange}
-                      required
-                    />
-                  </label>
-                  <label>
-                    Email
-                    <input
-                      type="email"
-                      name="email"
-                      value={newDoctor.email}
-                      onChange={handleFormChange}
-                      required
-                    />
-                  </label>
-                  <label>
-                    Password
-                    <input
-                      type="password"
-                      name="password"
-                      value={newDoctor.password}
-                      onChange={handleFormChange}
-                      required
-                      minLength="8"
-                      //pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
-                      //title="Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character"
-                    />
-                  </label>
+                  <div className="form-section">
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="firstName">First Name *</label>
+                        <input
+                          type="text"
+                          id="firstName"
+                          name="firstName"
+                          value={newDoctor.firstName}
+                          onChange={handleFormChange}
+                          className={formErrors.firstName ? "error" : ""}
+                        />
+                        {formErrors.firstName && <span className="error-message">{formErrors.firstName}</span>}
+                      </div>
+                      <div className="form-group">
+                        <label htmlFor="lastName">Last Name *</label>
+                        <input
+                          type="text"
+                          id="lastName"
+                          name="lastName"
+                          value={newDoctor.lastName}
+                          onChange={handleFormChange}
+                          className={formErrors.lastName ? "error" : ""}
+                        />
+                        {formErrors.lastName && <span className="error-message">{formErrors.lastName}</span>}
+                      </div>
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="email">Email Address *</label>
+                        <input
+                          type="email"
+                          id="email"
+                          name="email"
+                          value={newDoctor.email}
+                          onChange={handleFormChange}
+                          className={formErrors.email ? "error" : ""}
+                        />
+                        {formErrors.email && <span className="error-message">{formErrors.email}</span>}
+                      </div>
+                      <div className="form-group">
+                        <label htmlFor="phone">Phone Number *</label>
+                        <input
+                          type="tel"
+                          id="phone"
+                          name="phone"
+                          value={newDoctor.phone}
+                          onChange={handleFormChange}
+                          className={formErrors.phone ? "error" : ""}
+                        />
+                        {formErrors.phone && <span className="error-message">{formErrors.phone}</span>}
+                      </div>
+                    </div>
+                    {!editingDoctor && (
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label htmlFor="password">Password *</label>
+                          <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            value={newDoctor.password}
+                            onChange={handleFormChange}
+                            className={formErrors.password ? "error" : ""}
+                          />
+                          {formErrors.password && <span className="error-message">{formErrors.password}</span>}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="form-section">
-                  <h3>Professional Details</h3>
-                  <label>
-                    Hospital Name
-                    <input
-                      type="text"
-                      name="hospitalName"
-                      value={newDoctor.hospitalName}
-                      onChange={handleFormChange}
-                      required
-                    />
-                  </label>
-                  <label>
-                    Department
-                    <input
-                      type="text"
-                      name="department"
-                      value={newDoctor.department}
-                      onChange={handleFormChange}
-                      required
-                    />
-                  </label>
-                  <label>
-                    License Number
-                    <input
-                      type="text"
-                      name="licenseNumber"
-                      value={newDoctor.licenseNumber}
-                      onChange={handleFormChange}
-                      required
-                    />
-                  </label>
-                  <label>
-                    Years of Experience
-                    <input
-                      type="number"
-                      name="yearsOfExperience"
-                      value={newDoctor.yearsOfExperience}
-                      onChange={handleFormChange}
-                      required
-                    />
-                  </label>
-                  <label>
-                    Qualifications
-                    <textarea
-                      name="qualifications"
-                      value={newDoctor.qualifications}
-                      onChange={handleFormChange}
-                      required
-                    />
-                  </label>
-                  <label>
-                    Status
-                    <select
-                      name="status"
-                      value={newDoctor.status}
-                      onChange={handleFormChange}
-                      required
-                    >
-                      <option value="Active">Active</option>
-                      <option value="Inactive">Inactive</option>
-                    </select>
-                  </label>
+
+                <div className={`form-step ${currentStep === 2 ? 'active' : ''}`}>
+                  <h3>Professional Information</h3>
+                  <div className="form-section">
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="hospitalName">Hospital Name *</label>
+                        <input
+                          type="text"
+                          id="hospitalName"
+                          name="hospitalName"
+                          value={newDoctor.hospitalName}
+                          onChange={handleFormChange}
+                          className={formErrors.hospitalName ? "error" : ""}
+                        />
+                        {formErrors.hospitalName && <span className="error-message">{formErrors.hospitalName}</span>}
+                      </div>
+                      <div className="form-group">
+                        <label htmlFor="department">Department *</label>
+                        <input
+                          type="text"
+                          id="department"
+                          name="department"
+                          value={newDoctor.department}
+                          onChange={handleFormChange}
+                          className={formErrors.department ? "error" : ""}
+                        />
+                        {formErrors.department && <span className="error-message">{formErrors.department}</span>}
+                      </div>
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="licenseNumber">License Number *</label>
+                        <input
+                          type="text"
+                          id="licenseNumber"
+                          name="licenseNumber"
+                          value={newDoctor.licenseNumber}
+                          onChange={handleFormChange}
+                          className={formErrors.licenseNumber ? "error" : ""}
+                        />
+                        {formErrors.licenseNumber && <span className="error-message">{formErrors.licenseNumber}</span>}
+                      </div>
+                      <div className="form-group">
+                        <label htmlFor="yearsOfExperience">Years of Experience</label>
+                        <input
+                          type="number"
+                          id="yearsOfExperience"
+                          name="yearsOfExperience"
+                          value={newDoctor.yearsOfExperience}
+                          onChange={handleFormChange}
+                          min="0"
+                          className={formErrors.yearsOfExperience ? "error" : ""}
+                        />
+                        {formErrors.yearsOfExperience && <span className="error-message">{formErrors.yearsOfExperience}</span>}
+                      </div>
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group full-width">
+                        <label htmlFor="qualifications">Qualifications</label>
+                        <textarea
+                          id="qualifications"
+                          name="qualifications"
+                          value={newDoctor.qualifications}
+                          onChange={handleFormChange}
+                          rows="3"
+                          className={formErrors.qualifications ? "error" : ""}
+                        />
+                        {formErrors.qualifications && <span className="error-message">{formErrors.qualifications}</span>}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="form-actions">
-                <button type="submit" disabled={isSubmitting}> {/* <-- Disable button when submitting */} 
-                  {isSubmitting ? "Saving..." : "Save"} {/* <-- Change button text */} 
-                  {/* Optional: Add a spinner icon here if you have one */} 
-                  {/* {isSubmitting && <Spinner />} */} 
+
+              <div className="form-navigation">
+                <button 
+                  type="button" 
+                  className="prev-step" 
+                  onClick={handlePrevStep}
+                  disabled={currentStep === 1}
+                >
+                  Previous
                 </button>
-                <button type="button" onClick={() => setShowForm(false)} disabled={isSubmitting}> {/* <-- Optionally disable cancel too */}
+                <div className="step-indicators">
+                  <span className={`step-indicator ${currentStep === 1 ? 'active' : ''}`}></span>
+                  <span className={`step-indicator ${currentStep === 2 ? 'active' : ''}`}></span>
+                </div>
+                <button 
+                  type="button" 
+                  className="next-step"
+                  onClick={handleNextStep}
+                  disabled={currentStep === totalSteps}
+                >
+                  Next
+                </button>
+              </div>
+
+              <div className="form-actions">
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting || currentStep !== totalSteps}
+                >
+                  {isSubmitting ? "Saving..." : (editingDoctor ? "Update Doctor" : "Add Doctor")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForm(false);
+                    setNewDoctor(INITIAL_DOCTOR_STATE);
+                    setEditingDoctor(null);
+                    setFormErrors({});
+                    setCurrentStep(1);
+                  }}
+                >
                   Cancel
                 </button>
               </div>
             </form>
           </div>
         </div>
+      )}
+
+      {showErrorModal && (
+        <ErrorModal 
+          errors={formErrors} 
+          onClose={() => setShowErrorModal(false)} 
+        />
       )}
     </div>
   );

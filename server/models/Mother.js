@@ -16,6 +16,14 @@ const Mother = sequelize.define('Mother', {
     validate: { isEmail: true }
   },
   phone: { type: DataTypes.STRING, allowNull: true },
+  nationalId: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+    validate: {
+      len: [5, 20] // National ID should be between 5 and 20 characters
+    }
+  },
   county: { type: DataTypes.STRING, allowNull: false },
   constituency: { type: DataTypes.STRING, allowNull: false },
   ward: { type: DataTypes.STRING, allowNull: false },

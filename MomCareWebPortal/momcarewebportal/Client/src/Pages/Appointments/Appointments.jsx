@@ -17,6 +17,12 @@ const Appointments = () => {
   const [reschedulingAppointment, setReschedulingAppointment] = useState(null);
   const [cancelingAppointment, setCancelingAppointment] = useState(null);
   const [viewingDescription, setViewingDescription] = useState(null);
+  const [formErrors, setFormErrors] = useState({});
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [rescheduleFormData, setRescheduleFormData] = useState({
+    date: '',
+    time: ''
+  });
 
   const appointmentsPerPage = 10;
   const dispatch = useDispatch();
@@ -95,24 +101,76 @@ const Appointments = () => {
   // Reschedule appointment
   const handleRescheduleAppointment = (appointment) => {
     setReschedulingAppointment(appointment);
+    setRescheduleFormData({
+      date: '',
+      time: ''
+    });
+    setFormErrors({});
   };
 
-  const handleConfirmReschedule = async (newDate, newTime) => {
+  const validateRescheduleForm = () => {
+    const errors = {};
+    
+    if (!rescheduleFormData.date) {
+      errors.date = 'Date is required';
+    } else {
+      const selectedDate = new Date(rescheduleFormData.date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (selectedDate < today) {
+        errors.date = 'Date cannot be in the past';
+      }
+    }
+    
+    if (!rescheduleFormData.time) {
+      errors.time = 'Time is required';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleConfirmReschedule = async () => {
+    if (!validateRescheduleForm()) {
+      setShowErrorModal(true);
+      return;
+    }
+    
     try {
       await axios.put(`/appointments/${reschedulingAppointment.id}`, {
-        date: newDate,
-        time: newTime
+        date: rescheduleFormData.date,
+        time: rescheduleFormData.time
       });
       dispatch(fetchAppointments());
       setReschedulingAppointment(null);
+      setRescheduleFormData({ date: '', time: '' });
+      setFormErrors({});
       toast({
         title: "✅ Success",
         description: "Appointment rescheduled successfully."
       });
-    } catch {
+    } catch (error) {
       toast({
         title: "❌ Error",
-        description: "Failed to reschedule appointment."
+        description: error.response?.data?.message || "Failed to reschedule appointment."
+      });
+    }
+  };
+
+  const handleRescheduleFormChange = (e) => {
+    const { name, value } = e.target;
+    setRescheduleFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Clear error for this field when user starts typing
+    if (formErrors[name]) {
+      setFormErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
       });
     }
   };
@@ -146,6 +204,40 @@ const Appointments = () => {
 
   const handleCancelCancel = () => {
     setCancelingAppointment(null);
+  };
+
+  const ErrorModal = ({ errors, onClose }) => {
+    return (
+      <div className="error-modal" style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000
+      }}>
+        <div className="modal-content">
+          <div className="error-header">
+            <h2>Please Fix the Following Errors</h2>
+            <button className="close-btn" onClick={onClose}>&times;</button>
+          </div>
+          <div className="error-list">
+            {Object.entries(errors).map(([field, error]) => (
+              <div key={field} className="error-item">
+                <strong>{field.charAt(0).toUpperCase() + field.slice(1)}:</strong> {error}
+              </div>
+            ))}
+          </div>
+          <div className="error-actions">
+            <button onClick={onClose}>Close</button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -289,17 +381,41 @@ const Appointments = () => {
         <div className="modal">
           <div className="modal-content">
             <h2>Reschedule Appointment</h2>
-            <p>Are you sure you want to reschedule this appointment?</p>
-            <input
-              type="date"
-              onChange={(e) =>
-                handleConfirmReschedule(e.target.value, "12:00:00")
-              }
-            />
-            <button onClick={() => handleConfirmReschedule("2024-12-01", "12:00:00")}>
-              Confirm
-            </button>
-            <button onClick={handleCancelReschedule}>Cancel</button>
+            <p>Please select a new date and time for this appointment.</p>
+            <div className="form-group">
+              <label>
+                Date
+                <input
+                  type="date"
+                  name="date"
+                  value={rescheduleFormData.date}
+                  onChange={handleRescheduleFormChange}
+                  className={formErrors.date ? 'error' : ''}
+                />
+                {formErrors.date && <span className="error-message">{formErrors.date}</span>}
+              </label>
+            </div>
+            <div className="form-group">
+              <label>
+                Time
+                <input
+                  type="time"
+                  name="time"
+                  value={rescheduleFormData.time}
+                  onChange={handleRescheduleFormChange}
+                  className={formErrors.time ? 'error' : ''}
+                />
+                {formErrors.time && <span className="error-message">{formErrors.time}</span>}
+              </label>
+            </div>
+            <div className="modal-actions">
+              <button onClick={handleConfirmReschedule} className="confirm-btn">
+                Confirm Reschedule
+              </button>
+              <button onClick={handleCancelReschedule} className="cancel-btn">
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -331,6 +447,13 @@ const Appointments = () => {
             <button onClick={() => setViewingDescription(null)}>Close</button>
           </div>
         </div>
+      )}
+
+      {showErrorModal && (
+        <ErrorModal 
+          errors={formErrors} 
+          onClose={() => setShowErrorModal(false)} 
+        />
       )}
     </div>
   );
