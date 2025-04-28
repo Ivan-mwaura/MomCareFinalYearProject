@@ -3,21 +3,28 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
-const sequelize = new Sequelize(
-process.env.DB_NAME,
-process.env.DB_USER,
-process.env.DB_PASSWORD,
-{
-host: process.env.DB_HOST,
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
 dialect: "postgres",
+dialectModule: require("pg"),
+dialectOptions: {
+ssl: {
+require: true,
+rejectUnauthorized: false,
+},
+},
 logging: false,
-}
-);
+});
+
+console.log("Database URL:", process.env.DATABASE_URL);
 
 const connectDB = async () => {
 try {
 await sequelize.authenticate();
-console.log("Connected to PostgreSQL successfully.");
+console.log("Connected to Supabase PostgreSQL successfully.");
+const [results] = await sequelize.query(
+"SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
+);
+console.log("Tables in public schema:", results.map((row) => row.table_name));
 } catch (error) {
 console.error("Database connection failed:", error);
 process.exit(1);
