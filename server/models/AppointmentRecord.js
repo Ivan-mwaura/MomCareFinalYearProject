@@ -15,6 +15,10 @@ const AppointmentRecord = sequelize.define('AppointmentRecord', {
     type: DataTypes.UUID,
     allowNull: true,
   },
+  appointmentId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+  },
   appointmentDate: {
     type: DataTypes.DATEONLY,
     allowNull: false

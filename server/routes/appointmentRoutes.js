@@ -9,5 +9,6 @@ router.get('/mother/:motherId', protect, appointmentController.getAppointmentsBy
 router.get('/:id', protect, appointmentController.getAppointmentById);
 router.put('/:id', protect, appointmentController.updateAppointment);
 router.delete('/:id', protect, appointmentController.deleteAppointment);
+router.put('/:appointmentId/status', protect, appointmentController.updateAppointmentStatus);
 
 module.exports = router;

@@ -10,20 +10,20 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 
 const INITIAL_FORM_STATE = {
-  hypertension: false,
-  diabetes: false,
-  thyroidDisorders: false,
-  obesity: false,
-  hiv: false,
-  syphilis: false,
-  malaria: false,
-  uti: false,
-  depression: '',
-  anxiety: '',
-  stressLevel: '',
-  previousComplications: [],
-  parity: '',
-  gravidity: '',
+    hypertension: false,
+    diabetes: false,
+    thyroidDisorders: false,
+    obesity: false,
+    hiv: false,
+    syphilis: false,
+    malaria: false,
+    uti: false,
+    depression: '',
+    anxiety: '',
+    stressLevel: '',
+    previousComplications: [],
+    parity: '',
+    gravidity: '',
 };
 
 const HealthRecords = () => {

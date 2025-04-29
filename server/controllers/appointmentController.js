@@ -118,3 +118,38 @@ exports.getAppointmentsByMotherId = async (req, res) => {
     res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
+
+// Update appointment status to "Attended"
+exports.updateAppointmentStatus = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+
+    console.log(appointmentId);
+    
+    // Find the appointment
+    const appointment = await Appointment.findByPk(appointmentId);
+    
+    if (!appointment) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Appointment not found" 
+      });
+    }
+    
+    // Update the status to "Attended"
+    await appointment.update({ status: "Attended" });
+    
+    res.status(200).json({
+      success: true,
+      message: "Appointment status updated successfully",
+      data: appointment
+    });
+  } catch (error) {
+    console.error("Error updating appointment status:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to update appointment status",
+      error: error.message 
+    });
+  }
+};

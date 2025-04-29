@@ -30,6 +30,8 @@ const Patients = () => {
   const { data: mothers, loading: mothersLoading } = useSelector((state) => state.mothers);
   const { data: chws, loading: chwsLoading } = useSelector((state) => state.chws);
 
+  console.log(mothers)
+
   console.log(mothers);
 
   useEffect(() => {
@@ -87,7 +89,7 @@ const Patients = () => {
     if (name === "dob") {
       const selectedDate = new Date(value);
       const today = new Date();
-      const age = today.getFullYear() - selectedDate.getFullYear();
+      let age = today.getFullYear() - selectedDate.getFullYear();
       const monthDiff = today.getMonth() - selectedDate.getMonth();
       
       // Check if birthday hasn't occurred this year

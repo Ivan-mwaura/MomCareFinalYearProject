@@ -46,6 +46,40 @@ const sendAppointmentEmail = async (motherEmail, appointmentDetails) => {
   }
 };
 
+const sendPasswordResetEmail = async (email, resetCode) => {
+  try {
+    const mailOptions = {
+      from: 'evanjustin31@gmail.com',
+      to: email,
+      subject: 'Password Reset - MomCare',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #4a90e2;">Password Reset Request</h2>
+          <p>Dear Mother,</p>
+          <p>We received a request to reset your password for your MomCare account. Here is your reset code:</p>
+          
+          <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center;">
+            <h1 style="color: #4a90e2; margin: 0;">${resetCode}</h1>
+          </div>
+
+          <p>This code will expire in 15 minutes.</p>
+          <p>If you did not request this password reset, please ignore this email or contact support if you have concerns.</p>
+          
+          <p>Best regards,<br>MomCare Team</p>
+        </div>
+      `
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Password reset email sent: ', info.response);
+    return true;
+  } catch (error) {
+    console.error('Error sending password reset email: ', error);
+    throw error;
+  }
+};
+
 module.exports = {
-  sendAppointmentEmail
+  sendAppointmentEmail,
+  sendPasswordResetEmail
 }; 

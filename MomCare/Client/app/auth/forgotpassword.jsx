@@ -5,21 +5,52 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import axios from "axios";
+import { BACKEND_URL } from "@env";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (!email) {
-      alert("Please enter your email, mama!");
-    } else {
-      alert("A reset link is on its way, sweetie!");
-      router.push("/auth/login");
+      Alert.alert("Error", "Please enter your email, mama!");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await axios.post(`${BACKEND_URL}/api/password-reset/request`, {
+        email,
+      });
+
+      if (response.data.success) {
+        Alert.alert(
+          "Success",
+          "A reset code has been sent to your email. Please check your inbox.",
+          [
+            {
+              text: "OK",
+              onPress: () => router.push("/auth/resetpassword"),
+            },
+          ]
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Failed to send reset code. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -27,9 +58,9 @@ const ForgotPassword = () => {
     <LinearGradient colors={["#FFF5F7", "#FFE4E6"]} style={styles.container}>
       {/* Header */}
       <Ionicons name="key" size={48} color="#FF6B6B" style={styles.headerIcon} />
-      <Text style={styles.title}>Mama’s Key</Text>
+      <Text style={styles.title}>Mama's Key</Text>
       <Text style={styles.subtitle}>
-        Let’s get you back in with a reset link.
+        Let's get you back in with a reset code.
       </Text>
 
       {/* Email Input */}
@@ -43,14 +74,25 @@ const ForgotPassword = () => {
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
+          editable={!loading}
         />
       </View>
 
       {/* Reset Button */}
-      <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
+      <TouchableOpacity 
+        style={[styles.resetButton, loading && styles.disabledButton]} 
+        onPress={handleReset}
+        disabled={loading}
+      >
         <LinearGradient colors={["#FF6B6B", "#FF8787"]} style={styles.buttonGradient}>
-          <Ionicons name="paper-plane" size={20} color="#FFF" style={styles.buttonIcon} />
-          <Text style={styles.buttonText}>Send Link</Text>
+          {loading ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <>
+              <Ionicons name="paper-plane" size={20} color="#FFF" style={styles.buttonIcon} />
+              <Text style={styles.buttonText}>Send Reset Code</Text>
+            </>
+          )}
         </LinearGradient>
       </TouchableOpacity>
 
@@ -116,6 +158,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: "hidden",
     marginBottom: 24,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   buttonGradient: {
     flexDirection: "row",

@@ -79,6 +79,8 @@ risk['Low'] = fuzz.trimf(risk.universe, [0, 0, 5])
 risk['High'] = fuzz.trimf(risk.universe, [5, 10, 10])
 
 # Define fuzzy rules for Low and High risk only
+
+# Age & Education Rules
 rule1 = ctrl.Rule(CurrAgeGroup['Young'] & Education_level['Low'], risk['High'])
 rule2 = ctrl.Rule(CurrAgeGroup['Young'] & Education_level['Medium'], risk['High'])
 rule3 = ctrl.Rule(CurrAgeGroup['Young'] & Education_level['High'], risk['Low'])
@@ -89,6 +91,7 @@ rule7 = ctrl.Rule(CurrAgeGroup['Old'] & Education_level['Low'], risk['High'])
 rule8 = ctrl.Rule(CurrAgeGroup['Old'] & Education_level['Medium'], risk['High'])
 rule9 = ctrl.Rule(CurrAgeGroup['Old'] & Education_level['High'], risk['Low'])
 
+# Wealth & Distance to Health Rules
 rule10 = ctrl.Rule(Wealth_index['Poor'] & Distance_to_health['Very Far'], risk['High'])
 rule11 = ctrl.Rule(Wealth_index['Poor'] & Distance_to_health['Far'], risk['High'])
 rule12 = ctrl.Rule(Wealth_index['Poor'] & Distance_to_health['Close'], risk['High'])
@@ -99,6 +102,7 @@ rule16 = ctrl.Rule(Wealth_index['Rich'] & Distance_to_health['Very Far'], risk['
 rule17 = ctrl.Rule(Wealth_index['Rich'] & Distance_to_health['Far'], risk['Low'])
 rule18 = ctrl.Rule(Wealth_index['Rich'] & Distance_to_health['Close'], risk['Low'])
 
+# Marital Status & Education Rules
 rule19 = ctrl.Rule(marital_status['Single'] & Education_level['Low'], risk['High'])
 rule20 = ctrl.Rule(marital_status['Single'] & Education_level['Medium'], risk['High'])
 rule21 = ctrl.Rule(marital_status['Single'] & Education_level['High'], risk['Low'])
@@ -112,6 +116,7 @@ rule28 = ctrl.Rule(marital_status['Widowed'] & Education_level['Low'], risk['Hig
 rule29 = ctrl.Rule(marital_status['Widowed'] & Education_level['Medium'], risk['High'])
 rule30 = ctrl.Rule(marital_status['Widowed'] & Education_level['High'], risk['Low'])
 
+# Antenatal & Postnatal Visits Rules
 rule31 = ctrl.Rule(Antenatal_visits['Low'], risk['High'])
 rule32 = ctrl.Rule(Antenatal_visits['Medium'], risk['High'])
 rule33 = ctrl.Rule(Antenatal_visits['High'], risk['Low'])
@@ -119,6 +124,7 @@ rule34 = ctrl.Rule(Postnatal_visits['Low'], risk['High'])
 rule35 = ctrl.Rule(Postnatal_visits['Medium'], risk['High'])
 rule36 = ctrl.Rule(Postnatal_visits['High'], risk['Low'])
 
+# Media Use & Wealth Rules
 rule37 = ctrl.Rule(Frequency_media_use['Low'] & Wealth_index['Poor'], risk['High'])
 rule38 = ctrl.Rule(Frequency_media_use['Low'] & Wealth_index['Middle'], risk['High'])
 rule39 = ctrl.Rule(Frequency_media_use['Low'] & Wealth_index['Rich'], risk['Low'])
@@ -129,6 +135,7 @@ rule43 = ctrl.Rule(Frequency_media_use['High'] & Wealth_index['Poor'], risk['Hig
 rule44 = ctrl.Rule(Frequency_media_use['High'] & Wealth_index['Middle'], risk['Low'])
 rule45 = ctrl.Rule(Frequency_media_use['High'] & Wealth_index['Rich'], risk['Low'])
 
+# Internet Use & Distance to Health Rules
 rule46 = ctrl.Rule(Frequency_of_using_internet['Never'] & Distance_to_health['Very Far'], risk['High'])
 rule47 = ctrl.Rule(Frequency_of_using_internet['Never'] & Distance_to_health['Far'], risk['High'])
 rule48 = ctrl.Rule(Frequency_of_using_internet['Never'] & Distance_to_health['Close'], risk['High'])
@@ -139,12 +146,13 @@ rule52 = ctrl.Rule(Frequency_of_using_internet['Regular'] & Distance_to_health['
 rule53 = ctrl.Rule(Frequency_of_using_internet['Regular'] & Distance_to_health['Far'], risk['Low'])
 rule54 = ctrl.Rule(Frequency_of_using_internet['Regular'] & Distance_to_health['Close'], risk['Low'])
 
+# Place of Residence & Education Rules
 rule55 = ctrl.Rule(Place_of_Residence['Urban'] & Education_level['Low'], risk['High'])
 rule56 = ctrl.Rule(Place_of_Residence['Urban'] & Education_level['Medium'], risk['High'])
 rule57 = ctrl.Rule(Place_of_Residence['Urban'] & Education_level['High'], risk['Low'])
 rule58 = ctrl.Rule(Place_of_Residence['Rural'] & Education_level['Low'], risk['High'])
 rule59 = ctrl.Rule(Place_of_Residence['Rural'] & Education_level['Medium'], risk['High'])
-rule60 = ctrl.Rule(Place_of_Residence['Rural'] & Education_level['High'], risk['Low'])
+rule60 = ctrl.Rule(Place_of_Residence['Rural'] & Education_level['High'], risk['Low'])  # Higher risk in rural areas with high education
 
 # Control system and simulation
 risk_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10, rule11, rule12, rule13,

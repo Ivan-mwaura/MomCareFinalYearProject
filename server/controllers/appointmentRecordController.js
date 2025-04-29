@@ -1,60 +1,79 @@
 const AppointmentRecord = require('../models/AppointmentRecord');
 const Mother = require('../models/Mother'); // Assuming you have a Mother model
 const { validateAppointmentRecord } = require('../utils/validation');
+const Appointment = require('../models/Appointment'); // Assuming you have an Appointment model
 
 // Create an Appointment Record
 exports.createAppointmentRecord = async (req, res) => {
   try {
-    const { motherId, ...appointmentData } = req.body;
-
+    console.log("Creating appointment record with data:", req.body);
+    const { motherId, appointmentId, ...recordData } = req.body;
+    
+    console.log("Extracted motherId:", motherId);
+    console.log("Extracted appointmentId:", appointmentId);
+    console.log("Remaining recordData:", recordData);
+    
     // Validate required fields
-    const validationErrors = validateAppointmentRecord(appointmentData);
-    if (Object.keys(validationErrors).length > 0) {
-      return res.status(400).json({ 
-        message: "Validation failed", 
-        errors: validationErrors 
+    if (!motherId) {
+      return res.status(400).json({
+        success: false,
+        message: "Mother ID is required"
       });
     }
-
+    
     // Check if mother exists
     const mother = await Mother.findByPk(motherId);
     if (!mother) {
-      return res.status(404).json({ message: "Mother not found" });
-    }
-
-    // Check for duplicate appointment on same date and time
-    const existingAppointment = await AppointmentRecord.findOne({
-      where: {
-        motherId,
-        appointmentDate: appointmentData.appointmentDate,
-        appointmentTime: appointmentData.appointmentTime
-      }
-    });
-
-    if (existingAppointment) {
-      return res.status(409).json({ 
-        message: "An appointment already exists for this mother at the specified date and time" 
+      return res.status(404).json({
+        success: false,
+        message: "Mother not found"
       });
     }
-
-    const chwId = mother.chwId;
-
-    // Create appointment record with validated data
-    const record = await AppointmentRecord.create({
+    
+    // Create the appointment record
+    const appointmentRecord = await AppointmentRecord.create({
       motherId,
-      chwId,
-      ...appointmentData
+      appointmentId, // Store the appointmentId if provided
+      ...recordData
     });
 
-    res.status(201).json({ 
+    console.log("Created appointment record:", appointmentRecord.toJSON());
+    console.log("Appointment ID in created record:", appointmentRecord.appointmentId);
+    
+    // If attended is true and appointmentId is provided, update the appointment status
+    if (recordData.attended && appointmentId) {
+      try {
+        console.log("Updating appointment status for appointmentId:", appointmentId);
+        
+        // Find the appointment
+        const appointment = await Appointment.findByPk(appointmentId);
+        
+        if (appointment) {
+          // Update the appointment status to "Attended"
+          await appointment.update({ status: "Attended" });
+          console.log("Appointment status updated successfully to 'Attended'");
+        } else {
+          console.log("Appointment not found for ID:", appointmentId);
+        }
+      } catch (error) {
+        console.error("Error updating appointment status:", error);
+        // Continue with the response even if updating appointment status fails
+      }
+    } else {
+      console.log("Not updating appointment status. Attended:", recordData.attended, "AppointmentId:", appointmentId);
+    }
+    
+    res.status(201).json({
+      success: true,
       message: "Appointment record created successfully",
-      data: record 
+      data: appointmentRecord
     });
   } catch (error) {
     console.error("Error creating appointment record:", error);
-    res.status(500).json({ 
-      message: "Failed to create appointment record", 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      message: "Failed to create appointment record",
+      error: error.message
     });
   }
 };

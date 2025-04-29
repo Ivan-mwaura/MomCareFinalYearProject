@@ -13,9 +13,9 @@ const axios = require('axios');
 const fullTermWeeks = 40;
 const bufferDays = 2;
 
-// Schedule cron job to run daily at 2:50 PM for testing
-cron.schedule('0 03 10 * * *', async () => { 
-  console.log('ANC Scheduler cron job triggered at 2:50 PM');
+// Extract the job logic into a callable function
+async function updatePregnancyWeeksAndScheduleAppointments() {
+  console.log('ANC Scheduler job triggered');
   try {
     const mothers = await Mother.findAll({
       where: { dueDate: { [Op.ne]: null } },
@@ -310,9 +310,26 @@ cron.schedule('0 03 10 * * *', async () => {
       }
       console.log(`Completed processing for ${mother.firstName} ${mother.lastName}`);
     }));
+    
+    return { 
+      success: true, 
+      message: `Processed ${mothers.length} mothers successfully` 
+    };
   } catch (error) {
-    console.error('Error in ANC Scheduler cron job:', error.message);
+    console.error('Error in ANC Scheduler job:', error.message);
+    return { 
+      success: false, 
+      error: error.message 
+    };
   }
+}
+
+// Keep the cron job but make it call the function
+cron.schedule('0 03 10 * * *', async () => {
+  await updatePregnancyWeeksAndScheduleAppointments();
 });
 
-//console.log('ANC Scheduler cron job initialized');
+// Export the function so it can be called from elsewhere
+module.exports = {
+  updatePregnancyWeeksAndScheduleAppointments
+};

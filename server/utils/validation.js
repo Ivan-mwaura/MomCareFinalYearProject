@@ -56,10 +56,10 @@ const validateAppointmentRecord = (data, isUpdate = false) => {
   }
 
   validateNumericRange('heartRate', 'Heart rate', 40, 200);
-  validateNumericRange('temperature', 'Temperature', 35, 42);
-  validateNumericRange('weight', 'Weight', 30, 200);
-  validateNumericRange('fundalHeight', 'Fundal height', 0, 50);
-  validateNumericRange('fetalHeartRate', 'Fetal heart rate', 110, 160);
+  validateNumericRange('temperature', 'Temperature', 35, 46);
+  validateNumericRange('weight', 'Weight', 30, 250);
+  validateNumericRange('fundalHeight', 'Fundal height', 0, 250);
+  validateNumericRange('fetalHeartRate', 'Fetal heart rate', 80, 160);
   validateNumericRange('gestationalAge', 'Gestational age', 0, 45);
 
   // Validate text fields length if provided

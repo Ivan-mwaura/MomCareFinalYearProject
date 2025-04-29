@@ -532,9 +532,9 @@ const CHWs = () => {
                     >
                       <option value="">Select Constituency</option>
                       {newCHW.county &&
-                        locationData[newCHW.county].map((constituency) => (
-                          <option key={constituency.name} value={constituency.name}>
-                            {constituency.name}
+                        Object.keys(locationData[newCHW.county]).map((constituency) => (
+                          <option key={constituency} value={constituency}>
+                            {constituency}
                           </option>
                         ))}
                     </select>
@@ -553,13 +553,11 @@ const CHWs = () => {
                       <option value="">Select Ward</option>
                       {newCHW.county &&
                         newCHW.constituency &&
-                        locationData[newCHW.county]
-                          .find((c) => c.name === newCHW.constituency)
-                          ?.wards.map((ward) => (
-                            <option key={ward} value={ward}>
-                              {ward}
-                            </option>
-                          ))}
+                        locationData[newCHW.county][newCHW.constituency].map((ward) => (
+                          <option key={ward} value={ward}>
+                            {ward}
+                          </option>
+                        ))}
                     </select>
                     {formErrors.ward && <span className="error-message">{formErrors.ward}</span>}
                   </label>

@@ -24,6 +24,8 @@ const appointmentRecordRoutes = require('./routes/appointmentRecordRoutes');
 const doctorRoutes = require('./routes/doctorRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const passwordResetRoutes = require('./routes/passwordResetRoutes');
 // Import error middleware
 const { errorMiddleware } = require('./middlewares/errorMiddleware');
 
@@ -59,7 +61,8 @@ app.use('/api/appointmentRecords', appointmentRecordRoutes);
 app.use('/api/doctors', doctorRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-
+app.use('/api/admin', adminRoutes);
+app.use('/api/password-reset', passwordResetRoutes);
 // Error Handler Middleware
 app.use(errorMiddleware);
 

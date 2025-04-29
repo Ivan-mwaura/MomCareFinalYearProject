@@ -38,6 +38,7 @@ const AppointmentRecord = () => {
     adherenceNotes: '',
     doctorsObservations: '',
     patientConcerns: '',
+    appointmentId: '',
   });
   const [activeTab, setActiveTab] = useState('visitDetails');
   const [appointmentRecords, setAppointmentRecords] = useState([]);
@@ -45,6 +46,16 @@ const AppointmentRecord = () => {
   const searchRef = useRef(null);
   const [formErrors, setFormErrors] = useState({});
   const [showErrorModal, setShowErrorModal] = useState(false);
+  const [scheduledAppointments, setScheduledAppointments] = useState([]);
+  const [visitTypeOptions, setVisitTypeOptions] = useState([
+    { value: 'Initial Visit', label: 'Initial Visit' },
+    { value: 'Follow-up', label: 'Follow-up' },
+    { value: 'Emergency', label: 'Emergency' },
+    { value: 'Routine Check-up', label: 'Routine Check-up' },
+    { value: 'Labor', label: 'Labor' },
+    { value: 'Postpartum', label: 'Postpartum' },
+  ]);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -73,24 +84,101 @@ const AppointmentRecord = () => {
   }, [searchQuery, toast]);
 
   useEffect(() => {
-    if (selectedMother) {
-      axios
-        .get(
+    const fetchAppointmentRecords = async () => {
+      if (!selectedMother) return;
+
+      try {
+        console.log('Fetching appointment records for mother:', selectedMother.id);
+        const response = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/appointmentRecords/mother/${selectedMother.id}`,
           {
             headers: { Authorization: `Bearer ${Cookies.get('token')}` },
           }
-        )
-        .then((response) => {
-          setAppointmentRecords(response.data.records || []);
-        })
-        .catch((error) => {
+        );
+
+        //console.log('Appointment records response:', response.data);
+
+        if (response.data && response.data.data) {
+          // Sort records by date and time in descending order
+          const sortedRecords = response.data.data.sort((a, b) => {
+            const dateA = new Date(`${a.appointmentDate}T${a.appointmentTime}`);
+            const dateB = new Date(`${b.appointmentDate}T${b.appointmentTime}`);
+            return dateB - dateA;
+          });
+          
+          console.log('Setting appointment records:', sortedRecords);
+          setAppointmentRecords(sortedRecords);
+        } else {
+          console.warn('No appointment records found in response:', response.data);
+          setAppointmentRecords([]);
+        }
+      } catch (error) {
+        console.error('Error fetching appointment records:', error);
           toast({
             title: 'Error',
-            description: 'Failed to fetch appointment records.',
-          });
+          description: 'Failed to fetch appointment records. Please try again.',
+          variant: 'destructive',
         });
-    }
+        setAppointmentRecords([]);
+      }
+    };
+
+    fetchAppointmentRecords();
+  }, [selectedMother, toast]);
+
+  useEffect(() => {
+    const fetchScheduledAppointments = async () => {
+      if (!selectedMother) return;
+
+      try {
+        const response = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/appointments/mother/${selectedMother.id}`,
+          {
+            headers: { Authorization: `Bearer ${Cookies.get('token')}` },
+          }
+        );
+
+        console.log("Scheduled appointments response:", response.data);
+
+        if (response.data.success) {
+          const allAppointments = response.data.data;
+          const today = new Date().toISOString().split('T')[0];
+          
+          // Filter today's appointments
+          const todayAppointments = allAppointments.filter(
+            appointment => appointment.date === today && appointment.status === "Scheduled"
+          );
+          
+          setScheduledAppointments(todayAppointments);
+          
+          // Update visit type options to include both scheduled appointments and regular visit types
+          setVisitTypeOptions([
+            { value: '', label: 'Select Visit Type' },
+            // Add scheduled appointments first
+            ...todayAppointments.map(appointment => ({
+              value: `scheduled:${appointment.id}`,
+              label: `Scheduled: ${appointment.type} - ${appointment.time}`
+            })),
+            // Add regular visit types
+            { value: 'Follow-up', label: 'Follow-up Visit' },
+            { value: 'Emergency', label: 'Emergency Visit' },
+            { value: 'Routine Check-up', label: 'Routine Check-up' },
+            { value: 'Initial Visit', label: 'Initial Visit' },
+            { value: 'Labor', label: 'Labor' },
+            { value: 'Postpartum', label: 'Postpartum' }
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching appointments:', error);
+        toast({
+          title: '❌ Error',
+          description: 'Failed to fetch appointments.',
+          variant: 'destructive',
+        });
+      }
+    };
+    
+    fetchScheduledAppointments();
   }, [selectedMother, toast]);
 
   useEffect(() => {
@@ -138,6 +226,7 @@ const AppointmentRecord = () => {
       adherenceNotes: '',
       doctorsObservations: '',
       patientConcerns: '',
+      appointmentId: '',
     });
     setAppointmentRecords([]);
     setExpandedRecords({});
@@ -151,131 +240,193 @@ const AppointmentRecord = () => {
     }));
   };
 
+  const handleVisitTypeChange = (e) => {
+    const selectedValue = e.target.value;
+    console.log('Selected visit type value:', selectedValue);
+    
+    if (selectedValue.startsWith('scheduled:')) {
+      // Handle scheduled appointment selection
+      const appointmentId = selectedValue.split(':')[1];
+      console.log('Extracted appointmentId:', appointmentId);
+      
+      const appointment = scheduledAppointments.find(a => a.id === appointmentId);
+      console.log('Found appointment:', appointment);
+      
+      if (appointment) {
+        setSelectedAppointment(appointment);
+        const updatedFormData = {
+          ...formData,
+          visitType: appointment.type,
+          appointmentDate: appointment.date,
+          appointmentTime: appointment.time,
+          appointmentId: appointment.id
+        };
+        console.log('Setting form data with appointmentId:', updatedFormData.appointmentId);
+        setFormData(updatedFormData);
+      }
+    } else {
+      // Handle regular visit type selection
+      console.log('Regular visit type selected, setting appointmentId to empty string');
+      setSelectedAppointment(null);
+      setFormData(prev => ({
+        ...prev,
+        visitType: selectedValue,
+        appointmentDate: '',
+        appointmentTime: '',
+        appointmentId: '' // Set to empty string instead of null
+      }));
+    }
+  };
+
   const validateForm = () => {
     const errors = {};
+    const tabErrors = {
+      visitDetails: [],
+      vitalSigns: [],
+      obstetric: [],
+      clinical: [],
+      lab: [],
+      medications: [],
+      followUp: [],
+      notes: []
+    };
     
     // Visit Details validation
+    if (!formData.visitType) {
+      errors.visitType = 'Visit type is required';
+      tabErrors.visitDetails.push('Visit type is required');
+    }
+
     if (!formData.appointmentDate) {
       errors.appointmentDate = 'Appointment date is required';
-    } else {
+      tabErrors.visitDetails.push('Appointment date is required');
+    } else if (!selectedAppointment) {
+      // Only validate date format for non-scheduled appointments
       const appointmentDate = new Date(formData.appointmentDate);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       if (appointmentDate < today) {
         errors.appointmentDate = 'Appointment date cannot be in the past';
+        tabErrors.visitDetails.push('Appointment date cannot be in the past');
       }
     }
 
     if (!formData.appointmentTime) {
       errors.appointmentTime = 'Appointment time is required';
-    } else if (!/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(formData.appointmentTime)) {
+      tabErrors.visitDetails.push('Appointment time is required');
+    } else if (!selectedAppointment && !/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(formData.appointmentTime)) {
       errors.appointmentTime = 'Invalid time format (use HH:mm)';
-    }
-
-    if (!formData.visitType) {
-      errors.visitType = 'Visit type is required';
+      tabErrors.visitDetails.push('Invalid time format (use HH:mm)');
     }
 
     // Vital Signs validation
-    if (activeTab === 'vitalSigns') {
-      if (formData.bloodPressure && !/^\d{2,3}\/\d{2,3}$/.test(formData.bloodPressure)) {
-        errors.bloodPressure = 'Invalid blood pressure format (e.g., 120/80)';
-      }
+    if (formData.bloodPressure && !/^\d{2,3}\/\d{2,3}$/.test(formData.bloodPressure)) {
+      errors.bloodPressure = 'Invalid blood pressure format (e.g., 120/80)';
+      tabErrors.vitalSigns.push('Invalid blood pressure format (e.g., 120/80)');
+    }
 
-      if (formData.heartRate) {
-        const hr = Number(formData.heartRate);
-        if (isNaN(hr) || hr < 40 || hr > 200) {
-          errors.heartRate = 'Heart rate must be between 40 and 200 bpm';
-        }
+    if (formData.heartRate) {
+      const hr = Number(formData.heartRate);
+      if (isNaN(hr) || hr < 40 || hr > 200) {
+        errors.heartRate = 'Heart rate must be between 40 and 200 bpm';
+        tabErrors.vitalSigns.push('Heart rate must be between 40 and 200 bpm');
       }
+    }
 
-      if (formData.temperature) {
-        const temp = Number(formData.temperature);
-        if (isNaN(temp) || temp < 35 || temp > 42) {
-          errors.temperature = 'Temperature must be between 35°C and 42°C';
-        }
+    if (formData.temperature) {
+      const temp = Number(formData.temperature);
+      if (isNaN(temp) || temp < 35 || temp > 46) {
+        errors.temperature = 'Temperature must be between 35°C and 46°C';
+        tabErrors.vitalSigns.push('Temperature must be between 35°C and 46°C');
       }
+    }
 
-      if (formData.weight) {
-        const weight = Number(formData.weight);
-        if (isNaN(weight) || weight < 30 || weight > 200) {
-          errors.weight = 'Weight must be between 30 and 200 kg';
-        }
+    if (formData.weight) {
+      const weight = Number(formData.weight);
+      if (isNaN(weight) || weight < 30 || weight > 250) {
+        errors.weight = 'Weight must be between 30 and 250 kg';
+        tabErrors.vitalSigns.push('Weight must be between 30 and 250 kg');
       }
     }
 
     // Obstetric validation
-    if (activeTab === 'obstetric') {
-      if (formData.fundalHeight) {
-        const fh = Number(formData.fundalHeight);
-        if (isNaN(fh) || fh < 0 || fh > 50) {
-          errors.fundalHeight = 'Fundal height must be between 0 and 50 cm';
-        }
+    if (formData.fundalHeight) {
+      const fh = Number(formData.fundalHeight);
+      if (isNaN(fh) || fh < 0 || fh > 250) {
+        errors.fundalHeight = 'Fundal height must be between 0 and 250 cm';
+        tabErrors.obstetric.push('Fundal height must be between 0 and 250 cm');
       }
+    }
 
-      if (formData.fetalHeartRate) {
-        const fhr = Number(formData.fetalHeartRate);
-        if (isNaN(fhr) || fhr < 110 || fhr > 160) {
-          errors.fetalHeartRate = 'Fetal heart rate must be between 110 and 160 bpm';
-        }
+    if (formData.fetalHeartRate) {
+      const fhr = Number(formData.fetalHeartRate);
+      if (isNaN(fhr) || fhr < 80 || fhr > 160) {
+        errors.fetalHeartRate = 'Fetal heart rate must be between 80 and 160 bpm';
+        tabErrors.obstetric.push('Fetal heart rate must be between 80 and 160 bpm');
       }
+    }
 
-      if (formData.gestationalAge) {
-        const ga = Number(formData.gestationalAge);
-        if (isNaN(ga) || ga < 0 || ga > 45) {
-          errors.gestationalAge = 'Gestational age must be between 0 and 45 weeks';
-        }
+    if (formData.gestationalAge) {
+      const ga = Number(formData.gestationalAge);
+      if (isNaN(ga) || ga < 0 || ga > 45) {
+        errors.gestationalAge = 'Gestational age must be between 0 and 45 weeks';
+        tabErrors.obstetric.push('Gestational age must be between 0 and 45 weeks');
       }
     }
 
     // Clinical Observations validation
-    if (activeTab === 'clinical') {
-      if (!formData.physicalFindings?.trim()) {
-        errors.physicalFindings = 'Physical findings are required';
-      }
-      if (!formData.symptoms?.trim()) {
-        errors.symptoms = 'Symptoms are required';
-      }
+    if (!formData.physicalFindings?.trim()) {
+      errors.physicalFindings = 'Physical findings are required';
+      tabErrors.clinical.push('Physical findings are required');
+    }
+    if (!formData.symptoms?.trim()) {
+      errors.symptoms = 'Symptoms are required';
+      tabErrors.clinical.push('Symptoms are required');
     }
 
     // Lab & Diagnostics validation
-    if (activeTab === 'lab' && formData.labResults?.trim()) {
-      if (formData.labResults.length > 1000) {
-        errors.labResults = 'Lab results must not exceed 1000 characters';
-      }
+    if (formData.labResults?.trim() && formData.labResults.length > 1000) {
+      errors.labResults = 'Lab results must not exceed 1000 characters';
+      tabErrors.lab.push('Lab results must not exceed 1000 characters');
     }
 
     // Medications validation
-    if (activeTab === 'medications' && formData.prescribedMedications?.trim()) {
-      if (formData.prescribedMedications.length > 1000) {
-        errors.prescribedMedications = 'Prescribed medications must not exceed 1000 characters';
-      }
+    if (formData.prescribedMedications?.trim() && formData.prescribedMedications.length > 1000) {
+      errors.prescribedMedications = 'Prescribed medications must not exceed 1000 characters';
+      tabErrors.medications.push('Prescribed medications must not exceed 1000 characters');
     }
 
     // Follow-Up validation
-    if (activeTab === 'followUp') {
-      if (formData.nextAppointmentDate) {
-        const nextDate = new Date(formData.nextAppointmentDate);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        if (nextDate < today) {
-          errors.nextAppointmentDate = 'Next appointment date cannot be in the past';
-        }
+    if (formData.nextAppointmentDate) {
+      const nextDate = new Date(formData.nextAppointmentDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (nextDate < today) {
+        errors.nextAppointmentDate = 'Next appointment date cannot be in the past';
+        tabErrors.followUp.push('Next appointment date cannot be in the past');
       }
-      if (!formData.careRecommendations?.trim()) {
-        errors.careRecommendations = 'Care recommendations are required';
-      }
+    }
+    if (!formData.careRecommendations?.trim()) {
+      errors.careRecommendations = 'Care recommendations are required';
+      tabErrors.followUp.push('Care recommendations are required');
     }
 
     // Notes validation
-    if (activeTab === 'notes') {
-      if (!formData.doctorsObservations?.trim()) {
-        errors.doctorsObservations = 'Doctor\'s observations are required';
-      }
-      if (!formData.patientConcerns?.trim()) {
-        errors.patientConcerns = 'Patient concerns are required';
-      }
+    if (!formData.doctorsObservations?.trim()) {
+      errors.doctorsObservations = 'Doctor\'s observations are required';
+      tabErrors.notes.push('Doctor\'s observations are required');
     }
+    if (!formData.patientConcerns?.trim()) {
+      errors.patientConcerns = 'Patient concerns are required';
+      tabErrors.notes.push('Patient concerns are required');
+    }
+
+    // Add tab errors to the main errors object
+    Object.keys(tabErrors).forEach(tab => {
+      if (tabErrors[tab].length > 0) {
+        errors[`${tab}Tab`] = tabErrors[tab];
+      }
+    });
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -294,146 +445,103 @@ const AppointmentRecord = () => {
     }
 
     // Validate all sections before submitting
-    let isValid = true;
-    const allTabs = ['visitDetails', 'vitalSigns', 'obstetric', 'clinical', 'lab', 'medications', 'followUp', 'notes'];
-    const currentTab = activeTab;
-    
-    // Temporarily switch to each tab to validate its fields
-    for (const tab of allTabs) {
-      setActiveTab(tab);
-      if (!validateForm()) {
-        isValid = false;
-        break;
-      }
-    }
-    
-    // Restore the original active tab
-    setActiveTab(currentTab);
-    
-    if (!isValid) {
+    if (!validateForm()) {
       setShowErrorModal(true);
       return;
     }
 
     setSubmitting(true);
-    const recordData = { ...formData, motherId: selectedMother.id };
+    
+    // Create recordData object with all form data
+    const recordData = { 
+      ...formData,
+      motherId: selectedMother.id,
+      // Set attended to true if there's a scheduled appointment
+      attended: selectedAppointment ? true : formData.attended,
+      // Only include appointmentId if there's a selected appointment
+      appointmentId: selectedAppointment ? selectedAppointment.id : null
+    };
+
+    // Log the data being sent
+    console.log('Sending appointment record data:', recordData);
 
     try {
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/appointmentRecords`,
         recordData,
         {
-          headers: { Authorization: `Bearer ${Cookies.get('token')}` },
+        headers: { Authorization: `Bearer ${Cookies.get('token')}` },
         }
       );
-
-      toast({
-        title: '✅ Success',
-        description: 'Appointment record saved successfully.',
-        variant: 'default',
-      });
 
       // Update the records list with the new record
       setAppointmentRecords((prev) => [response.data.data, ...prev]);
 
       // Reset form
-      setFormData({
-        appointmentDate: '',
-        appointmentTime: '',
-        visitType: '',
-        attended: false,
-        bloodPressure: '',
-        heartRate: '',
-        temperature: '',
-        weight: '',
-        fundalHeight: '',
-        fetalHeartRate: '',
-        gestationalAge: '',
-        physicalFindings: '',
-        symptoms: '',
-        labResults: '',
-        ultrasoundSummary: '',
-        prescribedMedications: '',
-        interventions: '',
-        nextAppointmentDate: '',
-        careRecommendations: '',
-        adherenceNotes: '',
-        doctorsObservations: '',
-        patientConcerns: '',
+        setFormData({
+          appointmentDate: '',
+          appointmentTime: '',
+          visitType: '',
+          attended: false,
+          bloodPressure: '',
+          heartRate: '',
+          temperature: '',
+          weight: '',
+          fundalHeight: '',
+          fetalHeartRate: '',
+          gestationalAge: '',
+          physicalFindings: '',
+          symptoms: '',
+          labResults: '',
+          ultrasoundSummary: '',
+          prescribedMedications: '',
+          interventions: '',
+          nextAppointmentDate: '',
+          careRecommendations: '',
+          adherenceNotes: '',
+          doctorsObservations: '',
+          patientConcerns: '',
+        appointmentId: '',
       });
-      setFormErrors({});
+      
+      // Reset selected appointment
+      setSelectedAppointment(null);
+      
+      // Reset to first tab
+      setActiveTab('visitDetails');
+      
+      // Show success message
+        toast({
+        title: '✅ Success',
+        description: 'Appointment record saved successfully.',
+        variant: 'default',
+      });
     } catch (error) {
       console.error('Error saving appointment record:', error);
       
+      // Extract error message from response
+      let errorMessage = 'An error occurred while saving the appointment record.';
       if (error.response) {
-        const { status, data } = error.response;
-        
-        // Handle validation errors (400)
-        if (status === 400) {
-          if (data.errors) {
-            setFormErrors(data.errors);
-            setShowErrorModal(true);
-          } else {
-            toast({
-              title: '❌ Validation Error',
-              description: data.message || 'Please check all required fields.',
-              variant: 'destructive',
-            });
-          }
-          return;
+        if (error.response.data && error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response.status === 400) {
+          errorMessage = 'Invalid data provided. Please check your inputs.';
+        } else if (error.response.status === 401) {
+          errorMessage = 'Your session has expired. Please log in again.';
+        } else if (error.response.status === 403) {
+          errorMessage = 'You do not have permission to perform this action.';
+        } else if (error.response.status === 404) {
+          errorMessage = 'The requested resource was not found.';
+        } else if (error.response.status === 500) {
+          errorMessage = 'Server error. Please try again later.';
         }
-        
-        // Handle duplicate appointment errors (409)
-        if (status === 409) {
-          toast({
-            title: '❌ Duplicate Appointment',
-            description: data.message || 'An appointment already exists at this time.',
-            variant: 'destructive',
-          });
-          return;
-        }
-        
-        // Handle unauthorized errors (401)
-        if (status === 401) {
-          toast({
-            title: '❌ Unauthorized',
-            description: 'You are not authorized to perform this action.',
-            variant: 'destructive',
-          });
-          return;
-        }
-        
-        // Handle server errors (500)
-        if (status === 500) {
-          toast({
-            title: '❌ Server Error',
-            description: data.message || 'An unexpected error occurred. Please try again later.',
-            variant: 'destructive',
-          });
-          return;
-        }
-        
-        // Handle other errors
-        toast({
-          title: '❌ Error',
-          description: data.message || 'Failed to save appointment record.',
-          variant: 'destructive',
-        });
-      } else if (error.request) {
-        // Handle network errors
-        toast({
-          title: '❌ Network Error',
-          description: 'No response from server. Please check your internet connection.',
-          variant: 'destructive',
-        });
-      } else {
-        // Handle other errors
-        toast({
-          title: '❌ Error',
-          description: 'An unexpected error occurred. Please try again.',
-          variant: 'destructive',
-        });
       }
+      
+      toast({
+        title: '❌ Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -464,6 +572,26 @@ const AppointmentRecord = () => {
   };
 
   const ErrorModal = ({ errors, onClose }) => {
+    // Group errors by tab
+    const tabErrors = {};
+    const fieldErrors = {};
+    
+    Object.entries(errors).forEach(([key, value]) => {
+      if (key.endsWith('Tab')) {
+        const tabName = key.replace('Tab', '');
+        tabErrors[tabName] = value;
+      } else {
+        fieldErrors[key] = value;
+      }
+    });
+    
+    // Format tab names for display
+    const formatTabName = (tab) => {
+      return tab
+        .replace(/([A-Z])/g, ' $1')
+        .replace(/^./, str => str.toUpperCase());
+    };
+    
     return (
       <div className="error-modal" style={{
         position: 'fixed',
@@ -477,18 +605,43 @@ const AppointmentRecord = () => {
         justifyContent: 'center',
         zIndex: 1000
       }}>
-        <div className="modal-content">
+        <div className="modal-content" style={{ maxWidth: '600px', maxHeight: '80vh', overflow: 'auto' }}>
           <div className="error-header">
             <h2>Please Fix the Following Errors</h2>
             <button className="close-btn" onClick={onClose}>&times;</button>
           </div>
-          <div className="error-list">
-            {Object.entries(errors).map(([field, error]) => (
-              <div key={field} className="error-item">
-                <strong>{field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}:</strong> {error}
+          
+          {Object.keys(tabErrors).length > 0 && (
+            <div className="tab-errors">
+              <h3>Tab Errors</h3>
+              {Object.entries(tabErrors).map(([tab, errors]) => (
+                <div key={tab} className="tab-error-group">
+                  <h4>{formatTabName(tab)} Tab</h4>
+                  <ul>
+                    {Array.isArray(errors) ? errors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    )) : (
+                      <li>{errors}</li>
+                    )}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {Object.keys(fieldErrors).length > 0 && (
+            <div className="field-errors">
+              <h3>Field Errors</h3>
+              <div className="error-list">
+                {Object.entries(fieldErrors).map(([field, error]) => (
+                  <div key={field} className="error-item">
+                    <strong>{field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}:</strong> {error}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
+          
           <div className="error-actions">
             <button onClick={onClose}>Close</button>
           </div>
@@ -497,9 +650,9 @@ const AppointmentRecord = () => {
     );
   };
 
-  if (loading && !motherResults.length) {
+  /*if (loading && !motherResults.length) {
     return <AppointmentRecordSkeleton />;
-  }
+  }*/
 
   return (
     <div className={`appointment-record-page ${darkMode ? 'dark-mode' : ''}`}>
@@ -632,6 +785,28 @@ const AppointmentRecord = () => {
                   <div className="form-content">
                     <h3>Visit Details</h3>
                     <div className="form-grid">
+                      <div className="form-group">
+                        <label htmlFor="visitType">Select Scheduled Appointment</label>
+                        <select
+                          id="visitType"
+                          name="visitType"
+                          value={formData.appointmentId ? `scheduled:${formData.appointmentId}` : formData.visitType}
+                          onChange={handleVisitTypeChange}
+                          className={formErrors.visitType ? 'error' : ''}
+                          required
+                        >
+                          <option value="">Select Appointment</option>
+                          {visitTypeOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                        {formErrors.visitType && <span className="error-message">{formErrors.visitType}</span>}
+                      </div>
+
+                      {selectedAppointment ? (
+                        <>
                       <label>
                         Appointment Date
                         <input
@@ -639,11 +814,13 @@ const AppointmentRecord = () => {
                           name="appointmentDate"
                           value={formData.appointmentDate}
                           onChange={handleInputChange}
-                          className={formErrors.appointmentDate ? 'error' : ''}
+                              className={formErrors.appointmentDate ? 'error' : ''}
                           required
+                              disabled
                         />
                       </label>
-                      {formErrors.appointmentDate && <span className="error-message">{formErrors.appointmentDate}</span>}
+                          {formErrors.appointmentDate && <span className="error-message">{formErrors.appointmentDate}</span>}
+                          
                       <label>
                         Appointment Time
                         <input
@@ -651,27 +828,43 @@ const AppointmentRecord = () => {
                           name="appointmentTime"
                           value={formData.appointmentTime}
                           onChange={handleInputChange}
-                          className={formErrors.appointmentTime ? 'error' : ''}
+                              className={formErrors.appointmentTime ? 'error' : ''}
                           required
+                              disabled
                         />
                       </label>
-                      {formErrors.appointmentTime && <span className="error-message">{formErrors.appointmentTime}</span>}
+                          {formErrors.appointmentTime && <span className="error-message">{formErrors.appointmentTime}</span>}
+                        </>
+                      ) : (
+                        <>
                       <label>
-                        Visit Type
-                        <select
-                          name="visitType"
-                          value={formData.visitType}
+                            Appointment Date
+                            <input
+                              type="date"
+                              name="appointmentDate"
+                              value={formData.appointmentDate}
                           onChange={handleInputChange}
-                          className={formErrors.visitType ? 'error' : ''}
+                              className={formErrors.appointmentDate ? 'error' : ''}
                           required
-                        >
-                          <option value="">Select Type</option>
-                          <option value="Routine">Routine Check-Up</option>
-                          <option value="Emergency">Emergency Visit</option>
-                          <option value="Follow-up">Follow-Up</option>
-                        </select>
+                            />
                       </label>
-                      {formErrors.visitType && <span className="error-message">{formErrors.visitType}</span>}
+                          {formErrors.appointmentDate && <span className="error-message">{formErrors.appointmentDate}</span>}
+                          
+                          <label>
+                            Appointment Time
+                            <input
+                              type="time"
+                              name="appointmentTime"
+                              value={formData.appointmentTime}
+                              onChange={handleInputChange}
+                              className={formErrors.appointmentTime ? 'error' : ''}
+                              required
+                            />
+                          </label>
+                          {formErrors.appointmentTime && <span className="error-message">{formErrors.appointmentTime}</span>}
+                        </>
+                      )}
+                      
                       <label className="checkbox-label">
                         <input
                           type="checkbox"
