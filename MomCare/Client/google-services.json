@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "525011046158",
+    "project_id": "momcare-b371e",
+    "storage_bucket": "momcare-b371e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:525011046158:android:99b439d0f6ddd87f5b515f",
+        "android_client_info": {
+          "package_name": "com.evansmwaura.MomCare"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCV-6J8GSCBnjlaRx0AJkLXoLldCQcAfmk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

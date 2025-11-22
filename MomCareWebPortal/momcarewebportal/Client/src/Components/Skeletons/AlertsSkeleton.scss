@@ -1,0 +1,184 @@
+@use "../../Components/styles/variables" as vars;
+@use "../../Components/styles/mixins" as *;
+@use "sass:math";
+
+.alerts-skeleton {
+  padding: vars.$padding;
+  color: vars.$text-primary;
+
+  .skeleton-title {
+    width: 300px;
+    height: 40px;
+    background: linear-gradient(90deg, vars.$secondary 25%, lighten(vars.$accent, 10%) 50%, vars.$secondary 75%);
+    background-size: 300% 100%;
+    animation: shimmer 2.5s infinite;
+    border-radius: vars.$border-radius;
+    margin: 0 auto vars.$padding auto;
+  }
+
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: vars.$padding;
+    margin-bottom: vars.$padding;
+
+    .skeleton-tab {
+      width: 100px;
+      height: 40px;
+      background: linear-gradient(90deg, vars.$secondary 25%, lighten(vars.$accent, 10%) 50%, vars.$secondary 75%);
+      background-size: 300% 100%;
+      animation: shimmer 2.5s infinite;
+      border-radius: vars.$border-radius;
+
+      &.active {
+        background: linear-gradient(90deg, darken(vars.$primary, 10%) 25%, vars.$primary 50%, darken(vars.$primary, 10%) 75%);
+      }
+
+      @include mobile {
+        width: 80px;
+        height: 36px;
+      }
+    }
+
+    @include mobile {
+      flex-direction: column;
+      align-items: center;
+    }
+  }
+
+  .alerts-list {
+    .skeleton-subtitle {
+      width: 200px;
+      height: 30px;
+      background: linear-gradient(90deg, vars.$secondary 25%, lighten(vars.$accent, 10%) 50%, vars.$secondary 75%);
+      background-size: 300% 100%;
+      animation: shimmer 2.5s infinite;
+      border-radius: vars.$border-radius;
+      margin-bottom: vars.$padding;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+
+      th, td {
+        padding: math.div(vars.$padding, 2);
+        border: 1px solid vars.$accent;
+      }
+
+      th {
+        height: 40px;
+        background: linear-gradient(90deg, vars.$secondary 25%, lighten(vars.$accent, 10%) 50%, vars.$secondary 75%);
+        background-size: 300% 100%;
+        animation: shimmer 2.5s infinite;
+      }
+
+      td {
+        .skeleton-cell {
+          height: 20px;
+          background: linear-gradient(90deg, vars.$secondary 25%, lighten(vars.$accent, 10%) 50%, vars.$secondary 75%);
+          background-size: 300% 100%;
+          animation: shimmer 2.5s infinite;
+          border-radius: vars.$border-radius;
+        }
+
+        .skeleton-action-button {
+          width: 100px;
+          height: 30px;
+          background: linear-gradient(90deg, vars.$secondary 25%, lighten(vars.$accent, 10%) 50%, vars.$secondary 75%);
+          background-size: 300% 100%;
+          animation: shimmer 2.5s infinite;
+          border-radius: vars.$border-radius;
+          margin: 0 auto;
+        }
+      }
+
+      @include tablet {
+        font-size: 12px;
+
+        th, td {
+          padding: math.div(vars.$padding, 3);
+        }
+      }
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: vars.$padding;
+
+      .skeleton-pagination-button {
+        width: 100px;
+        height: 40px;
+        background: linear-gradient(90deg, vars.$secondary 25%, lighten(vars.$accent, 10%) 50%, vars.$secondary 75%);
+        background-size: 300% 100%;
+        animation: shimmer 2.5s infinite;
+        border-radius: vars.$border-radius;
+      }
+
+      .skeleton-text {
+        width: 100px;
+        height: 20px;
+        background: linear-gradient(90deg, vars.$secondary 25%, lighten(vars.$accent, 10%) 50%, vars.$secondary 75%);
+        background-size: 300% 100%;
+        animation: shimmer 2.5s infinite;
+        border-radius: vars.$border-radius;
+      }
+
+      @include mobile {
+        .skeleton-pagination-button {
+          width: 80px;
+          height: 36px;
+        }
+
+        .skeleton-text {
+          font-size: 12px;
+        }
+      }
+    }
+  }
+
+  @include mobile {
+    padding: math.div(vars.$padding, 2);
+
+    .alerts-list {
+      table {
+        font-size: 12px;
+
+        th, td {
+          padding: math.div(vars.$padding, 3);
+        }
+      }
+    }
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -300% 0;
+  }
+  100% {
+    background-position: 300% 0;
+  }
+}
+
+[data-theme="dark"] {
+  .alerts-skeleton {
+    .skeleton-title,
+    .skeleton-tab,
+    .skeleton-subtitle,
+    .skeleton-header-cell,
+    .skeleton-cell,
+    .skeleton-action-button,
+    .skeleton-pagination-button,
+    .skeleton-text {
+      background: linear-gradient(90deg, #333 25%, lighten(#444, 10%) 50%, #333 75%);
+      background-size: 300% 100%;
+    }
+
+    .skeleton-tab.active {
+      background: linear-gradient(90deg, darken(vars.$primary, 10%) 25%, vars.$primary 50%, darken(vars.$primary, 10%) 75%);
+    }
+  }
+}

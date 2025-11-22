@@ -1,0 +1,184 @@
+@use "../../Components/styles/variables" as vars;
+@use "../../Components/styles/mixins" as *;
+@use "sass:math";
+
+.analytics-skeleton {
+  padding: vars.$padding;
+  background-color: vars.$background;
+}
+
+// Shimmer animation
+@keyframes shimmer {
+  0% {
+    background-position: -468px 0;
+  }
+  100% {
+    background-position: 468px 0;
+  }
+}
+
+.skeleton-title,
+.skeleton-date-input,
+.skeleton-section-title,
+.skeleton-chart-title,
+.skeleton-chart-content,
+.skeleton-select,
+.skeleton-button,
+.skeleton-preview-title,
+.skeleton-preview-text,
+.skeleton-preview-line {
+  background: linear-gradient(
+    90deg,
+    #FFE6EB 25%, // vars.$secondary
+    #FFF1F3 50%, // Softer, closer to #FFE6EB for reduced contrast
+    #FFE6EB 75% // vars.$secondary
+  );
+  background-size: 936px 100%;
+  animation: shimmer 3.5s infinite linear; // Slower animation
+  border-radius: vars.$border-radius;
+}
+
+.skeleton-title {
+  width: 200px;
+  height: 28px;
+  margin: 0 auto vars.$padding auto;
+}
+
+.date-filter {
+  display: flex;
+  gap: vars.$padding;
+  margin-bottom: vars.$padding;
+  justify-content: center;
+  align-items: center;
+
+  .skeleton-date-input {
+    width: 150px;
+    height: 40px;
+  }
+
+  @include mobile {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+.dashboard {
+  margin-bottom: vars.$padding;
+
+  .skeleton-section-title {
+    width: 150px;
+    height: 24px;
+    margin-bottom: vars.$padding;
+  }
+
+  .charts {
+    display: flex;
+    justify-content: space-between;
+    gap: vars.$padding;
+
+    .chart {
+      flex: 1;
+      background-color: vars.$background;
+      padding: vars.$padding;
+      border-radius: vars.$border-radius;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+      .skeleton-chart-title {
+        width: 120px;
+        height: 20px;
+        margin-bottom: vars.$padding;
+      }
+
+      .skeleton-chart-content {
+        width: 100%;
+        height: 200px;
+      }
+    }
+
+    @include tablet {
+      flex-direction: column;
+      gap: vars.$padding;
+
+      .chart {
+        margin-bottom: vars.$padding;
+      }
+    }
+  }
+}
+
+.reports {
+  background-color: vars.$secondary;
+  padding: vars.$padding;
+  border-radius: vars.$border-radius;
+
+  .skeleton-section-title {
+    width: 150px;
+    height: 24px;
+    margin-bottom: vars.$padding;
+  }
+
+  .report-controls {
+    display: flex;
+    align-items: center;
+    gap: vars.$padding;
+
+    .skeleton-select {
+      width: 200px;
+      height: 40px;
+    }
+
+    .skeleton-button {
+      width: 100px;
+      height: 40px;
+    }
+
+    @include mobile {
+      flex-direction: column;
+      gap: 10px;
+    }
+  }
+
+  .report-preview {
+    margin-top: vars.$padding;
+    background-color: vars.$background;
+    padding: vars.$padding;
+    border-radius: vars.$border-radius;
+
+    .skeleton-preview-title {
+      width: 150px;
+      height: 20px;
+      margin-bottom: vars.$padding;
+    }
+
+    .skeleton-preview-text {
+      width: 250px;
+      height: 16px;
+      margin-bottom: vars.$padding;
+    }
+
+    .skeleton-preview-line {
+      width: 80%;
+      height: 16px;
+      margin-bottom: 5px;
+    }
+  }
+}
+
+@include mobile {
+  .analytics-skeleton {
+    padding: math.div(vars.$padding, 2);
+  }
+
+  .date-filter {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .dashboard .charts {
+    flex-direction: column;
+  }
+
+  .reports {
+    padding: math.div(vars.$padding, 2);
+  }
+}

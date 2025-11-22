@@ -1,0 +1,87 @@
+@use "../styles/variables" as *;
+@use "../styles/mixins" as *;
+
+.sidebar {
+  width: $sidebar-width;
+  height: 100%;
+  background-color: $secondary;
+  color: $text-primary;
+  display: flex;
+  flex-direction: column;
+  padding: $padding;
+
+  .sidebar-header{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+
+    .sidebar-title {
+      font-size: 20px;
+      font-weight: bold;
+      color: $primary;
+      margin-bottom: $padding;
+      text-align: center;
+    }
+
+
+    img{
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+
+  }
+
+
+
+  nav {
+    ul {
+      list-style: none;
+      padding: 0;
+      
+
+      li {
+        margin: 25px 0;
+       
+
+        a {
+          color: $text-primary;
+          text-decoration: none;
+          font-size: 16px;
+          padding: 10px 15px;
+          display: block;
+          border-radius: $border-radius;
+          transition: all 0.3s ease-in-out;
+
+          &:hover {
+            background-color: $accent;
+            color: $background;
+          }
+
+          &.active-link {
+            font-weight: bold;
+            border-left: 4px solid $primary;
+            padding-left: 12px;
+            background-color: $primary;
+            color: $background;
+          }
+        }
+      }
+    }
+  }
+
+  @include laptop {
+    padding: 15px;
+  }
+
+  @include mobile {
+    width: 200px;
+
+    nav ul li a {
+      font-size: 14px;
+    }
+  }
+}

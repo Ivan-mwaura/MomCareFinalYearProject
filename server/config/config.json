@@ -1,0 +1,26 @@
+{
+  "development": {
+    "username": "postgres",
+    "password": "",
+    "database": "momcare",
+    "host": "localhost",
+    "port": "5432",
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": "postgres",
+    "password": "",
+    "database": "momcare_test",
+    "host": "localhost",
+    "port": "5432",
+    "dialect": "postgres"
+  },
+  "production": {
+    "username": "postgres",
+    "password": "",
+    "database": "momcare_prod",
+    "host": "localhost",
+    "port": "5432",
+    "dialect": "postgres"
+  }
+}

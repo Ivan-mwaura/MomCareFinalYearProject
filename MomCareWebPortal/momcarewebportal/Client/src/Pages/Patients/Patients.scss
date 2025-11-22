@@ -1,0 +1,582 @@
+@use "../../Components/styles/variables" as vars;
+@use "../../Components/styles/mixins" as *;
+@use "sass:math"; // Import the math module for division
+
+.patients {
+  padding: vars.$padding;
+  color: vars.$text-primary;
+
+  h1 {
+    color: vars.$primary;
+    font-size: 28px;
+    margin-bottom: vars.$padding;
+    text-align: center;
+  }
+
+  .register-btn {
+    background-color: vars.$primary;
+    color: vars.$background;
+    border: none;
+    border-radius: vars.$border-radius;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-bottom: vars.$padding;
+
+    &:hover {
+      background-color: vars.$accent;
+    }
+  }
+
+  .filters {
+    display: flex;
+    justify-content: space-between;
+    gap: vars.$padding;
+    margin-bottom: vars.$padding;
+
+    input,
+    select {
+      padding: 10px;
+      border-radius: vars.$border-radius;
+      background-color: vars.$accent;
+      border: none;
+      font-size: 14px;
+    }
+
+    @include mobile {
+      flex-direction: column;
+      gap: 10px;
+
+      input,
+      select {
+        width: 100%;
+      }
+    }
+  }
+
+  .patient-list {
+    margin-top: vars.$padding;
+
+    h2 {
+      color: vars.$primary;
+      margin-bottom: vars.$padding;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+
+      th,
+      td {
+        padding: math.div(vars.$padding, 2);
+        border: 1px solid vars.$accent;
+        text-align: left;
+        font-size: 14px;
+      }
+
+      th {
+        background-color: vars.$secondary;
+        color: vars.$text-primary;
+      }
+
+      td {
+        color: vars.$text-secondary;
+
+        &.high-risk {
+          color: red;
+        }
+
+        &.medium-risk {
+          color: orange;
+        }
+
+        &.low-risk {
+          color: green;
+        }
+      }
+
+      button {
+        background-color: vars.$primary;
+        color: vars.$background;
+        border: none;
+        border-radius: vars.$border-radius;
+        padding: 5px 10px;
+        cursor: pointer;
+
+        &:hover {
+          background-color: vars.$accent;
+        }
+      }
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1rem;
+
+      button {
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        border: none;
+        background-color: vars.$primary;
+        color: white;
+        cursor: pointer;
+
+        &:disabled {
+          background-color: #d6d6d6;
+          cursor: not-allowed;
+        }
+      }
+
+      span {
+        font-size: 1rem;
+      }
+    }
+
+    @include tablet {
+      table {
+        font-size: 12px;
+
+        th,
+        td {
+          padding: math.div(vars.$padding, 3);
+        }
+      }
+    }
+  }
+
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+
+    .modal-content {
+      background: vars.$background;
+      padding: vars.$padding;
+      border-radius: vars.$border-radius;
+      width: 50%;
+
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      overflow-y: auto; /* Enable scrolling if content exceeds the modal height */
+      max-height: 90vh; /* Limit the modal height to 90% of the viewport height */
+
+      h2 {
+        color: vars.$primary;
+        font-size: 22px;
+        margin-bottom: vars.$padding;
+        text-align: center;
+      }
+
+      ul {
+        margin-top: vars.$padding;
+        margin-left: vars.$padding;
+        color: vars.$text-secondary;
+
+        li {
+          margin-bottom: 5px;
+        }
+      }
+
+      button {
+        padding: 10px 20px;
+        border-radius: vars.$border-radius;
+        background-color: vars.$primary;
+        color: vars.$background;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+
+        &:hover {
+          background-color: vars.$accent;
+        }
+
+        & + button {
+          margin-left: 10px;
+          background-color: vars.$secondary;
+
+          &:hover {
+            background-color: vars.$primary;
+          }
+        }
+      }
+
+      form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        flex-direction: row;
+        justify-content: space-between;
+
+        label {
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          margin-bottom: vars.$padding;
+
+          input,
+          select {
+            margin-top: 5px;
+            padding: 10px;
+            border-radius: vars.$border-radius;
+            border: 1px solid vars.$accent;
+            background-color: vars.$background;
+            font-size: 14px;
+            color: vars.$text-secondary;
+          }
+        }
+
+        button {
+          align-self: flex-start;
+        }
+      }
+
+      @include mobile {
+        padding: math.div(vars.$padding, 2);
+        width: 90%;
+
+        h2 {
+          font-size: 18px;
+        }
+      }
+    }
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: vars.$padding;
+    margin-bottom: vars.$padding;
+
+    .form-left,
+    .form-right {
+      display: flex;
+      flex-direction: column;
+      gap: vars.$padding;
+
+      label {
+        width: 100%;
+      }
+
+      input,
+      select {
+        width: 85%;
+      }
+    }
+
+    @include mobile {
+      grid-template-columns: 1fr; /* Stacks the fields vertically on mobile */
+    }
+  }
+
+  @include mobile {
+    padding: math.div(vars.$padding, 2);
+
+    .filters {
+      gap: 10px;
+
+      input,
+      select {
+        width: 100%;
+      }
+    }
+
+    .patient-list {
+      table {
+        font-size: 12px;
+
+        th,
+        td {
+          padding: math.div(vars.$padding, 3);
+        }
+      }
+    }
+  }
+}
+
+// src/Pages/Patients/Patients.scss
+.loading-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;  /* Ensure the loader appears above other content */
+
+}
+
+// Form Styles
+.register-form {
+  max-width: 1200px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+
+  .form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+
+    h2 {
+      margin: 0;
+      color: #333;
+      font-size: 1.8rem;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #666;
+      cursor: pointer;
+      padding: 0.5rem;
+      line-height: 1;
+      border-radius: 50%;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #f5f5f5;
+        color: #333;
+      }
+    }
+  }
+
+  form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    margin-bottom: 2rem;
+    flex: 1;
+  }
+
+  .form-section {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+
+    h3 {
+      margin: 0;
+      color: #2c3e50;
+      font-size: 1.2rem;
+      font-weight: 600;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+  }
+
+  .form-group {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 0;
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      color: #4a5568;
+      font-weight: 500;
+
+      input, select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        font-size: 1rem;
+        transition: all 0.2s;
+        background: white;
+
+        &:focus {
+          outline: none;
+          border-color: #4299e1;
+          box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+
+        &.error {
+          border-color: #e53e3e;
+          &:focus {
+            box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1);
+          }
+        }
+      }
+
+      select {
+        cursor: pointer;
+        &:disabled {
+          background: #f7fafc;
+          cursor: not-allowed;
+        }
+      }
+    }
+
+    .error-message {
+      display: block;
+      color: #e53e3e;
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
+  }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: auto;
+    padding-top: 2rem;
+    border-top: 1px solid #eee;
+
+    button {
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      font-weight: 500;
+      transition: all 0.2s;
+      cursor: pointer;
+      min-width: 120px;
+
+      &.submit-btn {
+        background: #4299e1;
+        color: white;
+        border: none;
+
+        &:hover {
+          background: #3182ce;
+        }
+
+        &:disabled {
+          background: #a0aec0;
+          cursor: not-allowed;
+        }
+      }
+
+      &.cancel-btn {
+        background: white;
+        color: #4a5568;
+        border: 1px solid #e2e8f0;
+
+        &:hover {
+          background: #f7fafc;
+          border-color: #cbd5e0;
+        }
+      }
+    }
+  }
+
+  @media (max-width: 1024px) {
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .form-group {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// Error Modal Styles
+.error-modal {
+  .modal-content {
+    max-width: 500px;
+    width: 90%;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+  }
+
+  .error-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+
+    h2 {
+      margin: 0;
+      color: #e53e3e;
+      font-size: 1.5rem;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #666;
+      cursor: pointer;
+      padding: 0.5rem;
+      line-height: 1;
+      border-radius: 50%;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #f5f5f5;
+        color: #333;
+      }
+    }
+  }
+
+  .error-list {
+    margin-bottom: 1.5rem;
+
+    .error-item {
+      padding: 0.75rem;
+      background: #fff5f5;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+      color: #c53030;
+
+      strong {
+        color: #9b2c2c;
+      }
+    }
+  }
+
+  .error-actions {
+    display: flex;
+    justify-content: flex-end;
+
+    button {
+      padding: 0.75rem 1.5rem;
+      background: #e53e3e;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #c53030;
+      }
+    }
+  }
+}
+
+

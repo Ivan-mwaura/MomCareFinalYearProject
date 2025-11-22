@@ -1,0 +1,7 @@
+flask==2.3.3
+flask-cors==4.0.0  # Remove if not needed
+numpy==1.26.4
+scikit-fuzzy==0.4.2
+gunicorn==22.0.0
+setuptools==58.0.4
+wheel==0.36.2

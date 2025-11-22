@@ -1,0 +1,12 @@
+.vercel
+myvenv/
+*.xlsx
+*.jpeg
+*.csv
+*.docx
+*.docx#
+survey_visualization/
+Trials/
+.venv/
+.git/  # Add this to exclude the Git history
+skfuzzy_patched/  # Add this if you included a patched skfuzzy folder

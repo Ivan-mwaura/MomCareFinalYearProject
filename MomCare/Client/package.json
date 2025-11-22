@@ -1,0 +1,70 @@
+{
+  "name": "momcare",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "NODE_ENV=development expo start",
+    "android": "NODE_ENV=development expo run:android",
+    "ios": "NODE_ENV=development expo run:ios",
+    "web": "NODE_ENV=development expo start --web",
+    "eas:build:android": "eas build -p android",
+    "eas:build:ios": "eas build -p ios"
+  },
+  "dependencies": {
+    "@babel/plugin-proposal-export-namespace-from": "^7.18.9",
+    "@react-native-async-storage/async-storage": "1.23.1",
+    "@react-native-community/datetimepicker": "8.2.0",
+    "@react-native-firebase/app": "^21.12.0",
+    "@react-native-firebase/messaging": "^21.12.0",
+    "@reduxjs/toolkit": "^2.3.0",
+    "axios": "^1.8.4",
+    "base-64": "^1.0.0",
+    "expo": "~52.0.46",
+    "expo-constants": "~17.0.8",
+    "expo-dev-client": "~5.0.14",
+    "expo-device": "~7.0.3",
+    "expo-linear-gradient": "~14.0.2",
+    "expo-location": "~18.0.10",
+    "expo-notifications": "~0.29.14",
+    "expo-router": "^4.0.6",
+    "expo-status-bar": "~2.0.0",
+    "expo-vector-icons": "^10.0.1",
+    "react": "18.3.1",
+    "react-native": "0.76.9",
+    "react-native-animatable": "^1.4.0",
+    "react-native-chart-kit": "^6.12.0",
+    "react-native-gesture-handler": "~2.20.2",
+    "react-native-safe-area-context": "4.12.0",
+    "react-native-screens": "~4.4.0",
+    "react-native-skeleton-placeholder": "^5.2.4",
+    "react-native-svg": "15.8.0",
+    "react-native-toast-message": "^2.2.1",
+    "react-native-vector-icons": "^10.2.0",
+    "react-native-web": "~0.19.13",
+    "react-native-webview": "13.12.5",
+    "react-redux": "^9.1.2",
+    "redux": "^5.0.1",
+    "victory-native": "^41.10.0",
+    "expo-updates": "~0.27.4"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.0",
+    "eas-cli": "^15.0.15",
+    "metro-react-native-babel-preset": "^0.77.0",
+    "react-native-dotenv": "^3.4.11"
+  },
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "@babel/plugin-proposal-export-namespace-from",
+          "base-64",
+          "expo-vector-icons",
+          "react-native-chart-kit",
+          "react-native-skeleton-placeholder"
+        ]
+      }
+    }
+  },
+  "private": true
+}

@@ -1,0 +1,152 @@
+@use "../../Components/styles/variables" as vars;
+@use "../../Components/styles/mixins" as *;
+@use "sass:math"; // Import the math module for division
+
+.analytics {
+  padding: vars.$padding;
+  color: vars.$text-primary;
+
+  h1 {
+    color: vars.$primary;
+    font-size: 28px;
+    margin-bottom: vars.$padding;
+    text-align: center;
+  }
+
+  .date-filter {
+    display: flex;
+    gap: vars.$padding;
+    margin-bottom: vars.$padding;
+    justify-content: center;
+    align-items: center;
+
+    input {
+      padding: 10px;
+      border-radius: vars.$border-radius;
+      border: 1px solid vars.$accent;
+      background-color: vars.$background;
+      color: vars.$text-secondary;
+      font-size: 14px;
+    }
+  }
+
+  .dashboard {
+    margin-bottom: vars.$padding;
+
+    h2 {
+      color: vars.$primary;
+      font-size: 22px;
+      margin-bottom: vars.$padding;
+    }
+
+    .charts {
+      display: flex;
+      justify-content: space-between;
+      gap: vars.$padding;
+
+      .chart {
+        flex: 1;
+        background-color: vars.$background;
+        padding: vars.$padding;
+        border-radius: vars.$border-radius;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+        h3 {
+          color: vars.$primary;
+          margin-bottom: vars.$padding;
+        }
+      }
+
+      @include tablet {
+        flex-direction: column;
+        gap: vars.$padding;
+
+        .chart {
+          margin-bottom: vars.$padding;
+        }
+      }
+    }
+  }
+
+  .reports {
+    background-color: vars.$secondary;
+    padding: vars.$padding;
+    border-radius: vars.$border-radius;
+
+    h2 {
+      color: vars.$primary;
+      font-size: 22px;
+      margin-bottom: vars.$padding;
+    }
+
+    .report-controls {
+      display: flex;
+      align-items: center;
+      gap: vars.$padding;
+
+      select {
+        padding: 10px;
+        border-radius: vars.$border-radius;
+        border: 1px solid vars.$accent;
+        background-color: vars.$background;
+        color: vars.$text-secondary;
+        font-size: 14px;
+      }
+
+      button {
+        padding: 10px 20px;
+        border-radius: vars.$border-radius;
+        background-color: vars.$primary;
+        color: vars.$background;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+
+        &:hover {
+          background-color: vars.$accent;
+        }
+      }
+    }
+
+    .report-preview {
+      margin-top: vars.$padding;
+      background-color: vars.$background;
+      padding: vars.$padding;
+      border-radius: vars.$border-radius;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+      h3 {
+        color: vars.$primary;
+        margin-bottom: vars.$padding;
+      }
+
+      p {
+        color: vars.$text-secondary;
+        font-size: 14px;
+        margin-bottom: 5px;
+      }
+    }
+  }
+
+  @include mobile {
+    padding: math.div(vars.$padding, 2);
+
+    .date-filter {
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .dashboard .charts {
+      flex-direction: column;
+    }
+
+    .reports {
+      padding: math.div(vars.$padding, 2);
+
+      .report-controls {
+        flex-direction: column;
+        gap: 10px;
+      }
+    }
+  }
+}
